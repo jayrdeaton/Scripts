@@ -1,0 +1,22 @@
+{
+  "name": "@jayrdeaton/scripts",
+  "version": "1.0.0",
+  "description": "Personal dev scripts",
+  "type": "module",
+  "private": false,
+  "bin": {
+    "jrd": "./bin/cli.mjs"
+  },
+  "files": [
+    "bin",
+    "commands"
+  ],
+  "dependencies": {
+    "cosmetic": "latest",
+    "termkit": "latest"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
