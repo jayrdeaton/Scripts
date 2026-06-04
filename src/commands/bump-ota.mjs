@@ -2,23 +2,25 @@ import { execSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import cosmetic from 'cosmetic'
 import { command as createCommand } from 'termkit'
+import { Spinner } from 'termpulse'
 
 export const command = createCommand('bump-ota')
   .description('Bump otaVersion in src/constants/release.ts and commit')
   .option('f', 'file', '[file]', 'Path to release file (default: src/constants/release.ts)')
   .action(async (options) => {
     const filePath = resolve(process.cwd(), options.file ?? 'src/constants/release.ts')
+    const spinner = new Spinner({ text: 'Checking git status...' })
+    spinner.start()
 
     try {
       const status = execSync('git status --porcelain').toString().trim()
       if (status) {
-        console.error(cosmetic.red('Working directory is not clean. Commit or stash changes first.'))
+        spinner.fail('Working directory is not clean. Commit or stash changes first.')
         process.exit(1)
       }
     } catch (err) {
-      console.error(cosmetic.red(`Failed to check git status: ${err.message}`))
+      spinner.fail(`Failed to check git status: ${err.message}`)
       process.exit(1)
     }
 
@@ -26,7 +28,7 @@ export const command = createCommand('bump-ota')
     try {
       source = readFileSync(filePath, 'utf8')
     } catch {
-      console.error(cosmetic.red(`Could not read file: ${filePath}`))
+      spinner.fail(`Could not read file: ${filePath}`)
       process.exit(1)
     }
 
@@ -34,7 +36,7 @@ export const command = createCommand('bump-ota')
     const match = source.match(pattern)
 
     if (!match) {
-      console.error(cosmetic.red(`Could not find otaVersion in ${filePath}`))
+      spinner.fail(`Could not find otaVersion in ${filePath}`)
       process.exit(1)
     }
 
@@ -43,13 +45,14 @@ export const command = createCommand('bump-ota')
 
     writeFileSync(filePath, source.replace(pattern, `$1${next}`))
 
+    spinner.message('Committing...')
     try {
       execSync(`git add ${filePath}`)
       execSync(`git commit -m "otaVersion ${current} -> ${next}"`)
     } catch (err) {
-      console.error(cosmetic.red(`Auto-commit failed: ${err.message}`))
+      spinner.fail(`Auto-commit failed: ${err.message}`)
       process.exit(1)
     }
 
-    console.log(cosmetic.bold.green(`otaVersion bumped: ${current} -> ${next}`))
+    spinner.succeed(`otaVersion bumped: ${current} -> ${next}`)
   })

@@ -3,6 +3,7 @@ import { extname, join, resolve } from 'node:path'
 
 import cosmetic from 'cosmetic'
 import { command as createCommand } from 'termkit'
+import { Spinner } from 'termpulse'
 
 const WHITELIST = new Set(['.cjs', '.css', '.csv', '.ejs', '.env', '.gitignore', '.haml', '.html', '.java', '.js', '.json', '.mjs', '.paw', '.plist', '.py', '.rake', '.scss', '.sh', '.sql', '.stl', '.swift', '.ts', '.tsx', '.txt', '.xib', '.xml', '.yaml', '.yml'])
 
@@ -62,19 +63,22 @@ export const command = createCommand('code-count')
 
     const allPaths = paths.flatMap((p) => getFiles(p, { ignore, recursive }))
 
+    const spinner = new Spinner({ text: 'Scanning...' })
+    spinner.start()
+
     const totals = {}
     for (let i = 0; i < allPaths.length; i++) {
       const path = allPaths[i]
       const ext = extname(path)
       if (!ext) continue
-      process.stdout.write(`checking files ${i + 1} / ${allPaths.length}\r`)
+      spinner.message(`Checking files ${i + 1} / ${allPaths.length}`)
       totals[ext] = (totals[ext] ?? 0) + (await countLines(path))
     }
-    if (process.stdout.clearLine) process.stdout.clearLine(0)
+
+    const total = Object.values(totals).reduce((a, n) => a + n, 0)
+    spinner.succeed(`${commaString(total)} lines across ${allPaths.length} files`)
 
     for (const key of Object.keys(totals).sort()) {
       console.log(`${key}: ${cosmetic.cyan(commaString(totals[key]))}`)
     }
-    const total = Object.values(totals).reduce((a, n) => a + n, 0)
-    console.log(`total ${cosmetic.cyan(commaString(total))} in ${cosmetic.cyan(String(allPaths.length))} files`)
   })

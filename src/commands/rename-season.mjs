@@ -3,6 +3,7 @@ import { extname, join } from 'node:path'
 
 import cosmetic from 'cosmetic'
 import { command as createCommand } from 'termkit'
+import { log } from 'termpulse'
 
 export const command = createCommand('rename-season')
   .description('Rename files in a directory to SxEE format for TV library pickup')
@@ -14,7 +15,7 @@ export const command = createCommand('rename-season')
     try {
       files = readdirSync(dir)
     } catch {
-      console.error(cosmetic.red(`Could not read directory: ${dir}`))
+      log.fail(`Could not read directory: ${dir}`)
       process.exit(1)
     }
 
@@ -41,5 +42,5 @@ export const command = createCommand('rename-season')
       counter++
     }
 
-    console.log(cosmetic.bold.green(`\nDone. Renamed ${renamed} files.`))
+    log.succeed(`Renamed ${renamed} files.`)
   })

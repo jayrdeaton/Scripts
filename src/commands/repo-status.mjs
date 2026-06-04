@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path'
 
 import cosmetic from 'cosmetic'
 import { command as createCommand } from 'termkit'
+import { Spinner } from 'termpulse'
 
 function getGitStatus(dir) {
   try {
@@ -48,6 +49,9 @@ export const command = createCommand('repo-status')
       process.exit(1)
     }
 
+    const spinner = new Spinner({ text: 'Checking repos...' })
+    spinner.start()
+
     const repos = entries
       .filter((name) => {
         try {
@@ -56,7 +60,10 @@ export const command = createCommand('repo-status')
           return false
         }
       })
-      .map((name) => ({ name, ...getGitStatus(join(root, name)) }))
+      .map((name) => {
+        spinner.message(name)
+        return { name, ...getGitStatus(join(root, name)) }
+      })
       .filter((r) => r.isRepo)
 
     const dirty = repos.filter((r) => r.dirty.length > 0)
@@ -65,9 +72,11 @@ export const command = createCommand('repo-status')
     const clean = repos.filter((r) => r.dirty.length === 0 && r.untracked.length === 0 && r.unpushed === 0)
 
     if (dirty.length === 0 && untracked.length === 0 && unpushed.length === 0) {
-      console.log(cosmetic.green(`All ${clean.length} repos are clean.`))
+      spinner.succeed(`All ${clean.length} repos are clean.`)
       return
     }
+
+    spinner.stop()
 
     if (dirty.length > 0) {
       console.log(cosmetic.bold.red(`\nDirty (${dirty.length})`))

@@ -27,7 +27,8 @@
   },
   "dependencies": {
     "cosmetic": "latest",
-    "termkit": "latest"
+    "termkit": "latest",
+    "termpulse": "^1.1.3"
   },
   "devDependencies": {
     "eslint": "^10.4.1",

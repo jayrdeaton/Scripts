@@ -3,6 +3,7 @@ import { join, resolve } from 'node:path'
 
 import cosmetic from 'cosmetic'
 import { command as createCommand } from 'termkit'
+import { Spinner } from 'termpulse'
 
 function getDirSize(dirPath) {
   let total = 0
@@ -43,18 +44,24 @@ export const command = createCommand('folder-sizes')
       process.exit(1)
     }
 
+    const spinner = new Spinner({ text: 'Scanning...' })
+    spinner.start()
+
     const folders = entries
       .filter((e) => e.isDirectory())
       .map((e) => {
+        spinner.message(e.name)
         const size = getDirSize(join(root, e.name))
         return { name: e.name, size }
       })
       .sort((a, b) => b.size - a.size)
 
     if (folders.length === 0) {
-      console.log(cosmetic.faint('No folders found.'))
+      spinner.warn('No folders found.')
       return
     }
+
+    spinner.succeed(`${folders.length} folders`)
 
     const maxName = Math.max(...folders.map((f) => f.name.length))
     const maxSize = Math.max(...folders.map((f) => formatSize(f.size).length))

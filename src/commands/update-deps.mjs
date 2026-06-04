@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 
 import cosmetic from 'cosmetic'
 import { command as createCommand } from 'termkit'
+import { log } from 'termpulse'
 
 function exec(cmd) {
   console.log(cosmetic.faint(`$ ${cmd}`))
@@ -26,7 +27,7 @@ export const command = createCommand('update-deps')
     try {
       pkg = JSON.parse(readFileSync(pkgPath, 'utf8'))
     } catch {
-      console.error(cosmetic.red('No package.json found in current directory.'))
+      log.fail('No package.json found in current directory.')
       process.exit(1)
     }
 
@@ -35,21 +36,21 @@ export const command = createCommand('update-deps')
     const legacyFlag = options.legacy ? ' --legacy-peer-deps' : ''
 
     if (!options.dev && prodDeps.length) {
-      console.log(cosmetic.bold.cyan('\nUpdating dependencies...'))
+      log.info('Updating dependencies...')
       exec(`npm install${legacyFlag} ${prodDeps.join(' ')}`)
     }
 
     if (!options.prod && devDeps.length) {
-      console.log(cosmetic.bold.cyan('\nUpdating devDependencies...'))
+      log.info('Updating devDependencies...')
       exec(`npm install --save-dev${legacyFlag} ${devDeps.join(' ')}`)
     }
 
     const hasExpo = pkg.dependencies?.expo !== undefined || pkg.devDependencies?.expo !== undefined
 
     if (hasExpo) {
-      console.log(cosmetic.bold.cyan('\nFixing Expo managed versions...'))
+      log.info('Fixing Expo managed versions...')
       exec(`npx expo install --fix${options.legacy ? ' -- --legacy-peer-deps' : ''}`)
     }
 
-    console.log(cosmetic.bold.green('\nDone.'))
+    log.succeed('Done.')
   })
