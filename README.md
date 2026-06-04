@@ -5,10 +5,7 @@ Personal dev CLI. Invoked as `jrd`.
 ## Install
 
 ```sh
-git clone https://github.com/jayrdeaton/scripts.git
-cd scripts
-npm install
-npm link
+npm install -g @jayrdeaton/scripts
 ```
 
 ## Commands
