@@ -4,16 +4,9 @@ import { extname, join, resolve } from 'node:path'
 import cosmetic from 'cosmetic'
 import { command as createCommand } from 'termkit'
 
-const WHITELIST = new Set([
-  '.cjs', '.css', '.csv', '.ejs', '.env', '.gitignore', '.haml', '.html', '.java',
-  '.js', '.json', '.mjs', '.paw', '.plist', '.py', '.rake', '.scss', '.sh', '.sql',
-  '.stl', '.swift', '.ts', '.tsx', '.txt', '.xib', '.xml', '.yaml', '.yml',
-])
+const WHITELIST = new Set(['.cjs', '.css', '.csv', '.ejs', '.env', '.gitignore', '.haml', '.html', '.java', '.js', '.json', '.mjs', '.paw', '.plist', '.py', '.rake', '.scss', '.sh', '.sql', '.stl', '.swift', '.ts', '.tsx', '.txt', '.xib', '.xml', '.yaml', '.yml'])
 
-const SKIP = new Set([
-  '.DS_Store', '.git', 'Carthage', 'Dockerfile', 'LICENSE', 'Test',
-  'node_modules', 'package-lock.json',
-])
+const SKIP = new Set(['.DS_Store', '.git', 'Carthage', 'Dockerfile', 'LICENSE', 'Test', 'node_modules', 'package-lock.json'])
 
 function getFiles(base, { ignore = [], recursive = false } = {}) {
   try {

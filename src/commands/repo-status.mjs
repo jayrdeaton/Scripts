@@ -10,7 +10,7 @@ function getGitStatus(dir) {
     const out = execSync('git status --porcelain', {
       cwd: dir,
       stdio: ['ignore', 'pipe', 'ignore'],
-      encoding: 'utf8',
+      encoding: 'utf8'
     })
     const lines = out.split('\n').filter(Boolean)
     const dirty = lines.filter((l) => !l.startsWith('??'))
@@ -21,7 +21,7 @@ function getGitStatus(dir) {
       const ahead = execSync('git rev-list --count @{u}..HEAD', {
         cwd: dir,
         stdio: ['ignore', 'pipe', 'ignore'],
-        encoding: 'utf8',
+        encoding: 'utf8'
       }).trim()
       unpushed = parseInt(ahead, 10) || 0
     } catch {
