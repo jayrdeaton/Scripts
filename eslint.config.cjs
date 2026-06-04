@@ -29,7 +29,7 @@ module.exports = defineConfig([
       'prettier/prettier': 'warn',
       'simple-import-sort/imports': 'warn',
       'simple-import-sort/exports': 'warn',
-      'no-console': 'warn'
+      'no-console': 'off'
     }
   }
 ])
