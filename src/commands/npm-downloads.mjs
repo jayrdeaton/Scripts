@@ -16,9 +16,7 @@ async function getAllPackages(username) {
   let from = 0
 
   while (true) {
-    const data = await fetchJson(
-      `https://registry.npmjs.org/-/v1/search?text=maintainer:${username}&size=${size}&from=${from}`
-    )
+    const data = await fetchJson(`https://registry.npmjs.org/-/v1/search?text=maintainer:${username}&size=${size}&from=${from}`)
     packages.push(...data.objects.map((o) => o.package.name))
     if (packages.length >= data.total || data.objects.length < size) break
     from += size
