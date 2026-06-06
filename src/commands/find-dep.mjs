@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 
@@ -77,16 +77,12 @@ export const command = Program.command('find-dep', '[deps...]')
     console.log(Color.bold(`\nFound ${results.length} project${results.length !== 1 ? 's' : ''}:\n`))
 
     for (const result of results) {
-      const label = result.projectName && result.projectName !== result.dir
-        ? `${Color.bold(result.dir)} ${Color.faint(`(${result.projectName})`)}`
-        : Color.bold(result.dir)
+      const label = result.projectName && result.projectName !== result.dir ? `${Color.bold(result.dir)} ${Color.faint(`(${result.projectName})`)}` : Color.bold(result.dir)
 
       console.log(`  ${label}`)
 
       for (const dep of result.found) {
-        const fieldLabel = dep.field === 'dependencies' ? 'dep'
-          : dep.field === 'devDependencies' ? 'dev'
-          : 'peer'
+        const fieldLabel = dep.field === 'dependencies' ? 'dep' : dep.field === 'devDependencies' ? 'dev' : 'peer'
         console.log(`    ${Color.cyan(dep.name)}  ${Color.faint(`${dep.version}  [${fieldLabel}]`)}`)
       }
     }

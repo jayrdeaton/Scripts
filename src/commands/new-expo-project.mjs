@@ -3,7 +3,7 @@ import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
-import { Color, Program, log } from 'termkit'
+import { Color, log, Program } from 'termkit'
 
 const BOILERPLATE_REPO = 'git@github.com:jayrdeaton/Expo-Boilerplate.git'
 const BOILERPLATE_DIR = join(homedir(), 'Developer', 'Expo-Boilerplate')
@@ -49,7 +49,7 @@ export const command = Program.command('new-expo-project')
     log.info(`Creating ${displayName}...`)
     cpSync(BOILERPLATE_DIR, targetDir, {
       recursive: true,
-      filter: (src) => !src.includes('/node_modules/'),
+      filter: (src) => !src.includes('/node_modules/')
     })
 
     rmSync(join(targetDir, '.git'), { recursive: true, force: true })

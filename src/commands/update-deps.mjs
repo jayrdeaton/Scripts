@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { Color, Program, log } from 'termkit'
+import { Color, log, Program } from 'termkit'
 
 function exec(cmd) {
   console.log(Color.faint(`$ ${cmd}`))

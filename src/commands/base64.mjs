@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
 
 import { Color, Program } from 'termkit'
 
@@ -41,5 +41,5 @@ export const command = Program.command('base64')
       .action(({ value, copy }) => {
         const result = Buffer.from(value, 'base64').toString('utf8')
         output(result, copy)
-      }),
+      })
   ])

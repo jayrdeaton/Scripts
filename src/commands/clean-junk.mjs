@@ -1,7 +1,7 @@
-import { extname, basename } from 'node:path'
 import { readdirSync, rmSync, statSync } from 'node:fs'
-import { createInterface } from 'node:readline'
+import { basename, extname } from 'node:path'
 import { join, resolve } from 'node:path'
+import { createInterface } from 'node:readline'
 
 import { Color, Program, Spinner } from 'termkit'
 

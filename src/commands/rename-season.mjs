@@ -1,7 +1,7 @@
 import { readdirSync, renameSync, statSync } from 'node:fs'
 import { extname, join } from 'node:path'
 
-import { Color, Program, log } from 'termkit'
+import { Color, log, Program } from 'termkit'
 
 export const command = Program.command('rename-season')
   .description('Rename files in a directory to SxEE format for TV library pickup')

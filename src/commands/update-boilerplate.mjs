@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
-import { Color, Program, log } from 'termkit'
+import { Color, log, Program } from 'termkit'
 
 const BOILERPLATE_REPO = 'git@github.com:jayrdeaton/Expo-Boilerplate.git'
 const BOILERPLATE_DIR = join(homedir(), 'Developer', 'Expo-Boilerplate')

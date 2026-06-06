@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 
 import { Color, Program } from 'termkit'
 
@@ -34,5 +34,5 @@ export const command = Program.command('binary')
         const buf = Buffer.from(JSON.parse(readFileSync(file, 'utf8')), 'binary')
         writeFileSync(destination, buf)
         console.log(`${Color.green('Success:')} Restored ${file} to ${destination}`)
-      }),
+      })
   ])
