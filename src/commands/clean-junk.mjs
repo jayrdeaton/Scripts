@@ -3,9 +3,7 @@ import { readdirSync, rmSync, statSync } from 'node:fs'
 import { createInterface } from 'node:readline'
 import { join, resolve } from 'node:path'
 
-import cosmetic from 'cosmetic'
-import { command as createCommand } from 'termkit'
-import { Spinner } from 'termpulse'
+import { Color, command as createCommand, Spinner } from 'termkit'
 
 function prompt(question) {
   return new Promise((res) => {
@@ -61,7 +59,7 @@ export const command = createCommand('clean-junk')
     if (extension && !extension.startsWith('.')) extension = `.${extension}`
 
     if (!includes && !excludes && !extension && !size) {
-      console.error(cosmetic.red('Requires at least one filter: --includes, --excludes, --extension, or --size'))
+      console.error(Color.red('Requires at least one filter: --includes, --excludes, --extension, or --size'))
       process.exit(1)
     }
 
@@ -89,7 +87,7 @@ export const command = createCommand('clean-junk')
     filterSpinner.stop()
 
     if (targets.length === 0) {
-      console.log(cosmetic.green('No junk items found.'))
+      console.log(Color.green('No junk items found.'))
       return
     }
 
@@ -116,7 +114,7 @@ export const command = createCommand('clean-junk')
         deleted++
       } catch (err) {
         deleteSpinner.stop()
-        console.error(cosmetic.red(`  Failed: ${item} — ${err.message}`))
+        console.error(Color.red(`  Failed: ${item} — ${err.message}`))
         deleteSpinner.start()
       }
     }

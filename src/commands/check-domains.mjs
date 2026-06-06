@@ -1,8 +1,6 @@
 import { writeFile } from 'node:fs/promises'
 
-import cosmetic from 'cosmetic'
-import { command as createCommand } from 'termkit'
-import { Spinner } from 'termpulse'
+import { Color, command as createCommand, Spinner } from 'termkit'
 
 const RDAP = {
   com: 'https://rdap.verisign.com/com/v1',
@@ -56,7 +54,7 @@ export const command = createCommand('check-domains')
   .action(async (args) => {
     const pattern = args.pattern
     if (!pattern) {
-      console.error(cosmetic.red('Usage: jrd check-domains <pattern>  e.g. ??fu.com or ???.io'))
+      console.error(Color.red('Usage: jrd check-domains <pattern>  e.g. ??fu.com or ???.io'))
       process.exit(1)
     }
 
@@ -66,7 +64,7 @@ export const command = createCommand('check-domains')
     try {
       domains = expandPattern(pattern)
     } catch (err) {
-      console.error(cosmetic.red(err.message))
+      console.error(Color.red(err.message))
       process.exit(1)
     }
 
@@ -81,13 +79,13 @@ export const command = createCommand('check-domains')
       try {
         const ok = await isAvailable(domain)
         checked++
-        spinner.message(`${checked}/${domains.length}  ${cosmetic.faint(domain)}`)
+        spinner.message(`${checked}/${domains.length}  ${Color.faint(domain)}`)
         if (ok) {
           available.push(domain)
           spinner.stop()
-          console.log(`  ${cosmetic.green(domain)}`)
+          console.log(`  ${Color.green(domain)}`)
           spinner.start()
-          spinner.message(`${checked}/${domains.length}  ${cosmetic.faint(domain)}`)
+          spinner.message(`${checked}/${domains.length}  ${Color.faint(domain)}`)
         }
       } catch {
         errors++
@@ -97,8 +95,8 @@ export const command = createCommand('check-domains')
 
     if (args.output && available.length > 0) {
       await writeFile(args.output, available.join('\n') + '\n')
-      spinner.succeed(`${available.length} available · saved to ${args.output}` + (errors > 0 ? cosmetic.faint(`  (${errors} errors)`) : ''))
+      spinner.succeed(`${available.length} available · saved to ${args.output}` + (errors > 0 ? Color.faint(`  (${errors} errors)`) : ''))
     } else {
-      spinner.succeed(`${available.length} available of ${domains.length}` + (errors > 0 ? cosmetic.faint(`  (${errors} errors)`) : ''))
+      spinner.succeed(`${available.length} available of ${domains.length}` + (errors > 0 ? Color.faint(`  (${errors} errors)`) : ''))
     }
   })

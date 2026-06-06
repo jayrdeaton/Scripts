@@ -1,6 +1,4 @@
-import cosmetic from 'cosmetic'
-import { command as createCommand } from 'termkit'
-import { Spinner } from 'termpulse'
+import { Color, command as createCommand, Spinner } from 'termkit'
 
 async function isAvailable(name) {
   try {
@@ -66,12 +64,12 @@ export const command = createCommand('npm-namer')
 
     console.log()
     for (const { name: n, available: avail } of results) {
-      if (avail === true) console.log(`  ${cosmetic.green('✓')}  ${n}`)
-      else if (avail === false) console.log(`  ${cosmetic.red('✗')}  ${cosmetic.faint(n)}`)
-      else console.log(`  ${cosmetic.yellow('?')}  ${cosmetic.faint(n)}`)
+      if (avail === true) console.log(`  ${Color.green('✓')}  ${n}`)
+      else if (avail === false) console.log(`  ${Color.red('✗')}  ${Color.faint(n)}`)
+      else console.log(`  ${Color.yellow('?')}  ${Color.faint(n)}`)
     }
 
     const parts = [`${available.length} available`, `${taken.length} taken`]
     if (errored.length > 0) parts.push(`${errored.length} error`)
-    console.log(`\n${cosmetic.faint(parts.join(' · '))}`)
+    console.log(`\n${Color.faint(parts.join(' · '))}`)
   })

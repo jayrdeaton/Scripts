@@ -2,9 +2,7 @@ import { execSync } from 'node:child_process'
 import { readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-import cosmetic from 'cosmetic'
-import { command as createCommand } from 'termkit'
-import { Spinner } from 'termpulse'
+import { Color, command as createCommand, Spinner } from 'termkit'
 
 function getGitStatus(dir) {
   try {
@@ -45,7 +43,7 @@ export const command = createCommand('repo-status')
     try {
       entries = readdirSync(root)
     } catch {
-      console.error(cosmetic.red(`Could not read directory: ${root}`))
+      console.error(Color.red(`Could not read directory: ${root}`))
       process.exit(1)
     }
 
@@ -79,25 +77,25 @@ export const command = createCommand('repo-status')
     spinner.stop()
 
     if (dirty.length > 0) {
-      console.log(cosmetic.bold.red(`\nDirty (${dirty.length})`))
+      console.log(Color.bold.red(`\nDirty (${dirty.length})`))
       for (const repo of dirty) {
-        console.log(`  ${cosmetic.red(repo.name)}  ${cosmetic.faint(`${repo.dirty.length} change${repo.dirty.length !== 1 ? 's' : ''}`)}`)
+        console.log(`  ${Color.red(repo.name)}  ${Color.faint(`${repo.dirty.length} change${repo.dirty.length !== 1 ? 's' : ''}`)}`)
       }
     }
 
     if (untracked.length > 0) {
-      console.log(cosmetic.bold.yellow(`\nUntracked (${untracked.length})`))
+      console.log(Color.bold.yellow(`\nUntracked (${untracked.length})`))
       for (const repo of untracked) {
-        console.log(`  ${cosmetic.yellow(repo.name)}  ${cosmetic.faint(`${repo.untracked.length} file${repo.untracked.length !== 1 ? 's' : ''}`)}`)
+        console.log(`  ${Color.yellow(repo.name)}  ${Color.faint(`${repo.untracked.length} file${repo.untracked.length !== 1 ? 's' : ''}`)}`)
       }
     }
 
     if (unpushed.length > 0) {
-      console.log(cosmetic.bold.cyan(`\nUnpushed (${unpushed.length})`))
+      console.log(Color.bold.cyan(`\nUnpushed (${unpushed.length})`))
       for (const repo of unpushed) {
-        console.log(`  ${cosmetic.cyan(repo.name)}  ${cosmetic.faint(`${repo.unpushed} commit${repo.unpushed !== 1 ? 's' : ''} ahead`)}`)
+        console.log(`  ${Color.cyan(repo.name)}  ${Color.faint(`${repo.unpushed} commit${repo.unpushed !== 1 ? 's' : ''} ahead`)}`)
       }
     }
 
-    console.log(cosmetic.faint(`\n${clean.length} of ${repos.length} repos clean`))
+    console.log(Color.faint(`\n${clean.length} of ${repos.length} repos clean`))
   })

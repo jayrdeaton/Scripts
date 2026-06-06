@@ -1,8 +1,6 @@
 import { execSync } from 'node:child_process'
 
-import cosmetic from 'cosmetic'
-import { command as createCommand } from 'termkit'
-import { Spinner } from 'termpulse'
+import { Color, command as createCommand, Spinner } from 'termkit'
 
 async function fetchJson(url) {
   const res = await fetch(url)
@@ -82,16 +80,16 @@ export const command = createCommand('npm-downloads')
     const orgs = [...new Set(sorted.filter((p) => p.name.startsWith('@')).map((p) => p.name.split('/')[0]))]
     const maxWidth = String(sorted[0]?.downloads ?? 0).length
 
-    console.log(`\n${cosmetic.bold(username)} — ${cosmetic.faint(period)}`)
-    if (orgs.length > 0) console.log(cosmetic.faint(`orgs: ${orgs.join('  ')}`))
+    console.log(`\n${Color.bold(username)} — ${Color.faint(period)}`)
+    if (orgs.length > 0) console.log(Color.faint(`orgs: ${orgs.join('  ')}`))
     console.log()
 
     for (const { name, downloads } of sorted) {
       const count = String(downloads).padStart(maxWidth)
-      const label = downloads === 0 ? cosmetic.faint(name) : name
-      console.log(`  ${cosmetic.cyan(count)}  ${label}`)
+      const label = downloads === 0 ? Color.faint(name) : name
+      console.log(`  ${Color.cyan(count)}  ${label}`)
     }
 
     const total = sorted.reduce((sum, p) => sum + p.downloads, 0)
-    console.log(cosmetic.faint(`\n${total.toLocaleString()} total downloads across ${sorted.length} packages`))
+    console.log(Color.faint(`\n${total.toLocaleString()} total downloads across ${sorted.length} packages`))
   })

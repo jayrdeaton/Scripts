@@ -1,9 +1,7 @@
 import { createReadStream, existsSync, lstatSync, readdirSync } from 'node:fs'
 import { extname, join, resolve } from 'node:path'
 
-import cosmetic from 'cosmetic'
-import { command as createCommand } from 'termkit'
-import { Spinner } from 'termpulse'
+import { Color, command as createCommand, Spinner } from 'termkit'
 
 const WHITELIST = new Set(['.cjs', '.css', '.csv', '.ejs', '.env', '.gitignore', '.haml', '.html', '.java', '.js', '.json', '.mjs', '.paw', '.plist', '.py', '.rake', '.scss', '.sh', '.sql', '.stl', '.swift', '.ts', '.tsx', '.txt', '.xib', '.xml', '.yaml', '.yml'])
 
@@ -79,6 +77,6 @@ export const command = createCommand('code-count')
     spinner.succeed(`${commaString(total)} lines across ${allPaths.length} files`)
 
     for (const key of Object.keys(totals).sort()) {
-      console.log(`${key}: ${cosmetic.cyan(commaString(totals[key]))}`)
+      console.log(`${key}: ${Color.cyan(commaString(totals[key]))}`)
     }
   })

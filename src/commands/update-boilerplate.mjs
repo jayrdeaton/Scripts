@@ -3,15 +3,13 @@ import { existsSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
-import cosmetic from 'cosmetic'
-import { command as createCommand } from 'termkit'
-import { log } from 'termpulse'
+import { Color, command as createCommand, log } from 'termkit'
 
 const BOILERPLATE_REPO = 'git@github.com:jayrdeaton/Expo-Boilerplate.git'
 const BOILERPLATE_DIR = join(homedir(), 'Developer', 'Expo-Boilerplate')
 
 function exec(cmd, opts = {}) {
-  console.log(cosmetic.faint(`$ ${cmd}`))
+  console.log(Color.faint(`$ ${cmd}`))
   execSync(cmd, { stdio: 'inherit', ...opts })
 }
 

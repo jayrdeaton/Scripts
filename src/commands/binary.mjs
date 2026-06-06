@@ -1,8 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 
-import cosmetic from 'cosmetic'
-import { command as createCommand } from 'termkit'
+import { Color, command as createCommand } from 'termkit'
 
 export const command = createCommand('binary')
   .description('Encode or decode binary strings')
@@ -17,10 +16,10 @@ export const command = createCommand('binary')
         const result = JSON.stringify(readFileSync(file, 'binary'))
         if (copy) {
           execSync('pbcopy', { input: result })
-          console.log(`${cosmetic.green('Success:')} Copied binary string to clipboard`)
+          console.log(`${Color.green('Success:')} Copied binary string to clipboard`)
         } else if (output) {
           writeFileSync(output, result)
-          console.log(`${cosmetic.green('Success:')} Wrote binary string to ${output}`)
+          console.log(`${Color.green('Success:')} Wrote binary string to ${output}`)
         } else {
           console.log(result)
         }
@@ -34,6 +33,6 @@ export const command = createCommand('binary')
         if (!existsSync(file)) throw new Error(`${file} not found`)
         const buf = Buffer.from(JSON.parse(readFileSync(file, 'utf8')), 'binary')
         writeFileSync(destination, buf)
-        console.log(`${cosmetic.green('Success:')} Restored ${file} to ${destination}`)
+        console.log(`${Color.green('Success:')} Restored ${file} to ${destination}`)
       }),
   ])

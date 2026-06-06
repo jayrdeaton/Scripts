@@ -1,9 +1,7 @@
 import { readdirSync, renameSync, statSync } from 'node:fs'
 import { extname, join } from 'node:path'
 
-import cosmetic from 'cosmetic'
-import { command as createCommand } from 'termkit'
-import { log } from 'termpulse'
+import { Color, command as createCommand, log } from 'termkit'
 
 export const command = createCommand('rename-season')
   .description('Rename files in a directory to SxEE format for TV library pickup')
@@ -34,7 +32,7 @@ export const command = createCommand('rename-season')
       const newPath = join(dir, newName)
 
       if (filePath !== newPath) {
-        console.log(`${cosmetic.faint(file)} -> ${cosmetic.cyan(newName)}`)
+        console.log(`${Color.faint(file)} -> ${Color.cyan(newName)}`)
         renameSync(filePath, newPath)
         renamed++
       }

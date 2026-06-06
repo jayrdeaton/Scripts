@@ -1,9 +1,7 @@
 import { existsSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-import cosmetic from 'cosmetic'
-import { command as createCommand } from 'termkit'
-import { Spinner } from 'termpulse'
+import { Color, command as createCommand, Spinner } from 'termkit'
 
 const BUILD_TARGETS = ['build', 'dist', 'ios', 'android']
 
@@ -55,7 +53,7 @@ function resolveProjects(dirs) {
       try {
         entries = readdirSync(root, { withFileTypes: true })
       } catch {
-        console.error(cosmetic.red(`Could not read directory: ${root}`))
+        console.error(Color.red(`Could not read directory: ${root}`))
         process.exit(1)
       }
       for (const e of entries) {
@@ -93,19 +91,19 @@ export const command = createCommand('clean-builds')
     spinner.stop()
 
     if (toDelete.length === 0) {
-      console.log(cosmetic.green('Nothing to clean.'))
+      console.log(Color.green('Nothing to clean.'))
       return
     }
 
     const totalSize = toDelete.reduce((sum, f) => sum + f.size, 0)
 
     if (!options.delete) {
-      console.log(cosmetic.bold.yellow('\nDry run — pass --delete to remove:\n'))
+      console.log(Color.bold.yellow('\nDry run — pass --delete to remove:\n'))
       for (const { root, path, size } of toDelete) {
         const rel = path.replace(root + '/', '')
-        console.log(`  ${cosmetic.red(rel)}  ${cosmetic.faint(formatSize(size))}`)
+        console.log(`  ${Color.red(rel)}  ${Color.faint(formatSize(size))}`)
       }
-      console.log(cosmetic.faint(`\n${toDelete.length} folder${toDelete.length !== 1 ? 's' : ''}  ${formatSize(totalSize)} total`))
+      console.log(Color.faint(`\n${toDelete.length} folder${toDelete.length !== 1 ? 's' : ''}  ${formatSize(totalSize)} total`))
       return
     }
 
@@ -122,7 +120,7 @@ export const command = createCommand('clean-builds')
         freed += size
       } catch (err) {
         deleteSpinner.stop()
-        console.error(cosmetic.red(`  Failed: ${path} — ${err.message}`))
+        console.error(Color.red(`  Failed: ${path} — ${err.message}`))
         deleteSpinner.start()
       }
     }

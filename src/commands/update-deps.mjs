@@ -2,12 +2,10 @@ import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import cosmetic from 'cosmetic'
-import { command as createCommand } from 'termkit'
-import { log } from 'termpulse'
+import { Color, command as createCommand, log } from 'termkit'
 
 function exec(cmd) {
-  console.log(cosmetic.faint(`$ ${cmd}`))
+  console.log(Color.faint(`$ ${cmd}`))
   execSync(cmd, { stdio: 'inherit' })
 }
 

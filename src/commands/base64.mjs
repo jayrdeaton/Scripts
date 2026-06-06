@@ -1,8 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 
-import cosmetic from 'cosmetic'
-import { command as createCommand } from 'termkit'
+import { Color, command as createCommand } from 'termkit'
 
 function resolveInput(value, file) {
   if (file) {
@@ -15,7 +14,7 @@ function resolveInput(value, file) {
 function output(result, copy) {
   if (copy) {
     execSync('pbcopy', { input: result })
-    console.log(`${cosmetic.green('Success:')} Copied to clipboard`)
+    console.log(`${Color.green('Success:')} Copied to clipboard`)
   } else {
     console.log(result)
   }

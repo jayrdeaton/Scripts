@@ -1,9 +1,7 @@
 import { readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-import cosmetic from 'cosmetic'
-import { command as createCommand } from 'termkit'
-import { Spinner } from 'termpulse'
+import { Color, command as createCommand, Spinner } from 'termkit'
 
 function getDirSize(dirPath) {
   let total = 0
@@ -40,7 +38,7 @@ export const command = createCommand('folder-sizes')
     try {
       entries = readdirSync(root, { withFileTypes: true })
     } catch {
-      console.error(cosmetic.red(`Could not read directory: ${root}`))
+      console.error(Color.red(`Could not read directory: ${root}`))
       process.exit(1)
     }
 
@@ -69,6 +67,6 @@ export const command = createCommand('folder-sizes')
     for (const folder of folders) {
       const name = folder.name.padEnd(maxName)
       const size = formatSize(folder.size).padStart(maxSize)
-      console.log(`  ${cosmetic.cyan(name)}  ${cosmetic.bold(size)}`)
+      console.log(`  ${Color.cyan(name)}  ${Color.bold(size)}`)
     }
   })
