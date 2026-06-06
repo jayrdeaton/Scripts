@@ -52,5 +52,8 @@ export const command = createCommand('update-deps')
       exec(`npx expo install --fix${options.legacy ? ' -- --legacy-peer-deps' : ''}`)
     }
 
+    log.info('Auditing and fixing vulnerabilities...')
+    exec('npm audit --fix')
+
     log.succeed('Done.')
   })
