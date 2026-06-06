@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process'
 import { readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-import { Color, command as createCommand, Spinner } from 'termkit'
+import { Color, Program, Spinner } from 'termkit'
 
 function getGitStatus(dir) {
   try {
@@ -33,7 +33,7 @@ function getGitStatus(dir) {
   }
 }
 
-export const command = createCommand('repo-status')
+export const command = Program.command('repo-status')
   .description('Report dirty and untracked files across repos in a directory')
   .variable('[dir]')
   .action(async (args) => {

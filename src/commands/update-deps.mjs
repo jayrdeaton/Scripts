@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { Color, command as createCommand, log } from 'termkit'
+import { Color, Program, log } from 'termkit'
 
 function exec(cmd) {
   console.log(Color.faint(`$ ${cmd}`))
@@ -13,7 +13,7 @@ function latestPackages(deps = {}) {
   return Object.keys(deps).map((name) => `${name}@latest`)
 }
 
-export const command = createCommand('update-deps')
+export const command = Program.command('update-deps')
   .description('Update all npm deps to @latest, then run expo install --fix if applicable')
   .option('d', 'dev', null, 'Only update devDependencies')
   .option('p', 'prod', null, 'Only update dependencies')

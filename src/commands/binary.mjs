@@ -1,12 +1,12 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 
-import { Color, command as createCommand } from 'termkit'
+import { Color, Program } from 'termkit'
 
-export const command = createCommand('binary')
+export const command = Program.command('binary')
   .description('Encode or decode binary strings')
   .commands([
-    createCommand('encode')
+    Program.command('encode')
       .description('Encode a file to a binary string')
       .variable('<file>')
       .option('c', 'copy', null, 'copy result to clipboard')
@@ -25,7 +25,7 @@ export const command = createCommand('binary')
         }
       }),
 
-    createCommand('decode')
+    Program.command('decode')
       .description('Restore a binary string file back to its original format')
       .variable('<file>')
       .variable('<destination>')

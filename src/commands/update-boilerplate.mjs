@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
-import { Color, command as createCommand, log } from 'termkit'
+import { Color, Program, log } from 'termkit'
 
 const BOILERPLATE_REPO = 'git@github.com:jayrdeaton/Expo-Boilerplate.git'
 const BOILERPLATE_DIR = join(homedir(), 'Developer', 'Expo-Boilerplate')
@@ -13,7 +13,7 @@ function exec(cmd, opts = {}) {
   execSync(cmd, { stdio: 'inherit', ...opts })
 }
 
-export const command = createCommand('update-boilerplate')
+export const command = Program.command('update-boilerplate')
   .description('Update Expo boilerplate — clones if absent, updates deps, commits, and pushes')
   .action(async () => {
     if (existsSync(BOILERPLATE_DIR)) {

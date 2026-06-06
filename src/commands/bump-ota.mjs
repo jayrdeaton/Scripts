@@ -2,9 +2,9 @@ import { execSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-import { command as createCommand, Spinner } from 'termkit'
+import { Program, Spinner } from 'termkit'
 
-export const command = createCommand('bump-ota')
+export const command = Program.command('bump-ota')
   .description('Bump otaVersion in src/constants/release.ts and commit')
   .option('f', 'file', '[file]', 'Path to release file (default: src/constants/release.ts)')
   .action(async (options) => {

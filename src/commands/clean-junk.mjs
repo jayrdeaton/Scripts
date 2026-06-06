@@ -3,7 +3,7 @@ import { readdirSync, rmSync, statSync } from 'node:fs'
 import { createInterface } from 'node:readline'
 import { join, resolve } from 'node:path'
 
-import { Color, command as createCommand, Spinner } from 'termkit'
+import { Color, Program, Spinner } from 'termkit'
 
 function prompt(question) {
   return new Promise((res) => {
@@ -41,7 +41,7 @@ function getItemSize(itemPath) {
   return total
 }
 
-export const command = createCommand('clean-junk')
+export const command = Program.command('clean-junk')
   .description('Delete files and directories matching given criteria')
   .variable('[dir]')
   .option('i', 'includes', '<str>', 'Delete items whose name includes this string')

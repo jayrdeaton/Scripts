@@ -1,4 +1,4 @@
-import { Color, command as createCommand, Spinner } from 'termkit'
+import { Color, Program, Spinner } from 'termkit'
 
 async function isAvailable(name) {
   try {
@@ -32,7 +32,7 @@ async function getSynonyms(word) {
   }
 }
 
-export const command = createCommand('npm-namer')
+export const command = Program.command('npm-namer')
   .description('Check npm package name availability, including variations')
   .variable('<name>')
   .option('s', 'synonyms', null, 'Also check synonyms of the name')

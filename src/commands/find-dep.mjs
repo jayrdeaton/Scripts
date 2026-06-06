@@ -2,7 +2,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 
-import { Color, command as createCommand, Spinner } from 'termkit'
+import { Color, Program, Spinner } from 'termkit'
 
 const DEP_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies']
 
@@ -27,7 +27,7 @@ function findMatches(pkgPath, targets) {
   return found.length ? { projectName: pkg.name, found } : null
 }
 
-export const command = createCommand('find-dep', '[deps...]')
+export const command = Program.command('find-dep', '[deps...]')
   .description('Find projects in a directory that use any of the given dependencies')
   .option('d', 'dir', '[dir]', 'Root directory to scan (default: ~/Developer)')
   .action(async (options) => {

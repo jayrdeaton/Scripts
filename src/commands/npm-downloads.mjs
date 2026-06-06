@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process'
 
-import { Color, command as createCommand, Spinner } from 'termkit'
+import { Color, Program, Spinner } from 'termkit'
 
 async function fetchJson(url) {
   const res = await fetch(url)
@@ -32,7 +32,7 @@ async function getDownloads(pkg, period) {
   }
 }
 
-export const command = createCommand('npm-downloads')
+export const command = Program.command('npm-downloads')
   .description('List all your npm packages sorted by total downloads')
   .option('u', 'user', '<name>', 'npm username (defaults to npm whoami)')
   .option('p', 'period', '<period>', 'last-day | last-week | last-month | last-year (default: last-month)')

@@ -3,7 +3,7 @@ import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
-import { Color, command as createCommand, log } from 'termkit'
+import { Color, Program, log } from 'termkit'
 
 const BOILERPLATE_REPO = 'git@github.com:jayrdeaton/Expo-Boilerplate.git'
 const BOILERPLATE_DIR = join(homedir(), 'Developer', 'Expo-Boilerplate')
@@ -21,7 +21,7 @@ function parseWords(name) {
     .filter(Boolean)
 }
 
-export const command = createCommand('new-expo-project')
+export const command = Program.command('new-expo-project')
   .description('Bootstrap a new Expo project from the boilerplate')
   .option('n', 'name', '<name>', 'Project name')
   .action(async (options) => {

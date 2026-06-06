@@ -1,8 +1,8 @@
 import { execSync } from 'node:child_process'
 
-import { command as createCommand } from 'termkit'
+import { Program } from 'termkit'
 
-export const command = createCommand('focus')
+export const command = Program.command('focus')
   .description('Bring an application to the front')
   .variable('[app]')
   .action((args) => {

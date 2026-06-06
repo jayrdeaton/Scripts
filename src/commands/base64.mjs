@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 
-import { Color, command as createCommand } from 'termkit'
+import { Color, Program } from 'termkit'
 
 function resolveInput(value, file) {
   if (file) {
@@ -20,10 +20,10 @@ function output(result, copy) {
   }
 }
 
-export const command = createCommand('base64')
+export const command = Program.command('base64')
   .description('Encode or decode base64')
   .commands([
-    createCommand('encode')
+    Program.command('encode')
       .description('Encode a string or file to base64')
       .variable('<value>')
       .option('f', 'file', null, 'treat value as a file path')
@@ -34,7 +34,7 @@ export const command = createCommand('base64')
         output(result, copy)
       }),
 
-    createCommand('decode')
+    Program.command('decode')
       .description('Decode a base64 string')
       .variable('<value>')
       .option('c', 'copy', null, 'copy result to clipboard')

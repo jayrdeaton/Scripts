@@ -1,7 +1,7 @@
 import { createReadStream, existsSync, lstatSync, readdirSync } from 'node:fs'
 import { extname, join, resolve } from 'node:path'
 
-import { Color, command as createCommand, Spinner } from 'termkit'
+import { Color, Program, Spinner } from 'termkit'
 
 const WHITELIST = new Set(['.cjs', '.css', '.csv', '.ejs', '.env', '.gitignore', '.haml', '.html', '.java', '.js', '.json', '.mjs', '.paw', '.plist', '.py', '.rake', '.scss', '.sh', '.sql', '.stl', '.swift', '.ts', '.tsx', '.txt', '.xib', '.xml', '.yaml', '.yml'])
 
@@ -48,7 +48,7 @@ function commaString(n) {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
-export const command = createCommand('code-count')
+export const command = Program.command('code-count')
   .description('Count lines of code by file type')
   .variable('[paths...]')
   .option('i', 'ignore', '[types...]', 'ignore files or file types')

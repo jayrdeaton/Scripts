@@ -1,7 +1,7 @@
 import { readdirSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-import { Color, command as createCommand, Spinner } from 'termkit'
+import { Color, Program, Spinner } from 'termkit'
 
 function getDirSize(dirPath) {
   let total = 0
@@ -28,7 +28,7 @@ function formatSize(bytes) {
   return `${bytes} B`
 }
 
-export const command = createCommand('folder-sizes')
+export const command = Program.command('folder-sizes')
   .description('List folders sorted by size, largest first')
   .variable('[dir]')
   .action(async (args) => {

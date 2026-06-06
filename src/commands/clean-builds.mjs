@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-import { Color, command as createCommand, Spinner } from 'termkit'
+import { Color, Program, Spinner } from 'termkit'
 
 const BUILD_TARGETS = ['build', 'dist', 'ios', 'android']
 
@@ -64,7 +64,7 @@ function resolveProjects(dirs) {
   return projects
 }
 
-export const command = createCommand('clean-builds')
+export const command = Program.command('clean-builds')
   .description('Delete build artifacts across repos — dry run by default')
   .variable('[dir...]')
   .option('m', 'modules', null, 'Also delete node_modules')

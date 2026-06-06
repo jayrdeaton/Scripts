@@ -26,7 +26,7 @@
     "preversion": "npm ci && npm run lint"
   },
   "dependencies": {
-    "termkit": "latest"
+    "termkit": "^2.2.0"
   },
   "devDependencies": {
     "eslint": "^10.4.1",

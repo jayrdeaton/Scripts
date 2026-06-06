@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises'
 
-import { Color, command as createCommand, Spinner } from 'termkit'
+import { Color, Program, Spinner } from 'termkit'
 
 const RDAP = {
   com: 'https://rdap.verisign.com/com/v1',
@@ -46,7 +46,7 @@ async function withConcurrency(items, limit, fn) {
   await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
 }
 
-export const command = createCommand('check-domains')
+export const command = Program.command('check-domains')
   .description('Check domain availability via RDAP for a wildcard pattern (? = any letter)')
   .variable('[pattern]')
   .option('c', 'concurrency', '<n>', 'Concurrent requests (default: 5)')
