@@ -69,6 +69,22 @@ Example: `jrd check-domains ??fu.com`
 
 ---
 
+### `jrd check-scripts`
+
+Compare `package.json` scripts across projects for consistency. Highlights scripts whose values differ from the most common value (or a reference project).
+
+```
+jrd check-scripts [scripts...] [options]
+
+Options:
+  -d, --dir <dir>   Root directory to scan (default: ~/Developer)
+  -r, --ref <ref>   Reference project name to compare against
+  -a, --all         Show all scripts, including matching ones
+  -f, --flat        Show one line per project instead of grouping by value
+```
+
+---
+
 ### `jrd clean-builds`
 
 Delete build artifacts (`build`, `dist`, `ios`, `android`) across one or more repos. Dry run by default.
@@ -118,6 +134,21 @@ Options:
 
 ---
 
+### `jrd find-dep`
+
+Find projects in a directory that use any of the given dependencies (searches `dependencies`, `devDependencies`, and `peerDependencies`).
+
+```
+jrd find-dep <deps...> [options]
+
+Options:
+  -d, --dir <dir>   Root directory to scan (default: ~/Developer)
+```
+
+Example: `jrd find-dep react-native expo`
+
+---
+
 ### `jrd focus`
 
 Bring an application to the front using AppleScript.
@@ -137,6 +168,21 @@ List all subdirectories sorted by size, largest first.
 ```
 jrd folder-sizes [dir]
 ```
+
+---
+
+### `jrd new-expo-project`
+
+Bootstrap a new Expo project from the boilerplate repo. Clones or updates the boilerplate, copies it to `~/Developer/<Name>`, rewrites `package.json` and `app.json` with the derived name/slug/bundle identifiers, and creates an initial git commit.
+
+```
+jrd new-expo-project [options]
+
+Options:
+  -n, --name <name>   Project name (required)
+```
+
+Example: `jrd new-expo-project --name MyApp`
 
 ---
 
@@ -184,6 +230,16 @@ Scan a directory of git repos and report which ones have dirty files, untracked 
 
 ```
 jrd repo-status [dir]
+```
+
+---
+
+### `jrd update-boilerplate`
+
+Update the Expo boilerplate repo — clones it if absent, runs `jrd update-deps`, lint-fixes, type-checks, tests, then commits and pushes the result.
+
+```
+jrd update-boilerplate
 ```
 
 ---
