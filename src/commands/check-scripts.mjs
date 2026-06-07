@@ -85,13 +85,9 @@ export const command = Program.command('check-scripts', '[scripts...]')
       const withScript = projects.filter((p) => p.scripts[scriptName] !== undefined)
       if (withScript.length < 2 && !refProject) continue
 
-      const expectedValue = refProject
-        ? refProject.scripts[scriptName]
-        : mostCommon(withScript.map((p) => p.scripts[scriptName]))
+      const expectedValue = refProject ? refProject.scripts[scriptName] : mostCommon(withScript.map((p) => p.scripts[scriptName]))
 
-      const allMatch =
-        withScript.every((p) => p.scripts[scriptName] === expectedValue) &&
-        (!refProject || projects.every((p) => p.scripts[scriptName] !== undefined))
+      const allMatch = withScript.every((p) => p.scripts[scriptName] === expectedValue) && (!refProject || projects.every((p) => p.scripts[scriptName] !== undefined))
 
       if (!options.all && allMatch) continue
 
