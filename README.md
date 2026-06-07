@@ -161,6 +161,21 @@ Default app is `Terminal`.
 
 ---
 
+### `jrd including`
+
+Find projects in a directory that contain a given file.
+
+```
+jrd including <file> [options]
+
+Options:
+  -d, --dir <dir>   Root directory to scan (default: ~/Developer)
+```
+
+Example: `jrd including PLAN.md`
+
+---
+
 ### `jrd folder-sizes`
 
 List all subdirectories sorted by size, largest first.
@@ -168,6 +183,21 @@ List all subdirectories sorted by size, largest first.
 ```
 jrd folder-sizes [dir]
 ```
+
+---
+
+### `jrd missing`
+
+Find projects in a directory that are missing a given file.
+
+```
+jrd missing <file> [options]
+
+Options:
+  -d, --dir <dir>   Root directory to scan (default: ~/Developer)
+```
+
+Example: `jrd missing README.md`
 
 ---
 
