@@ -1,4 +1,5 @@
 import { readdirSync, statSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 
 import { Color, Program, Spinner } from 'termkit'
@@ -32,7 +33,7 @@ export const command = Program.command('folder-sizes')
   .description('List folders sorted by size, largest first')
   .variable('[dir]')
   .action(async (args) => {
-    const root = resolve(args.dir ?? '.')
+    const root = resolve(args.dir ?? join(homedir(), 'Developer'))
 
     let entries
     try {

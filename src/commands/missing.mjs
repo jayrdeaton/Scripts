@@ -40,6 +40,7 @@ export const command = Program.command('missing', '[file]')
 
       spinner.message(name)
 
+      if (!existsSync(join(dir, 'package.json'))) continue
       if (!existsSync(join(dir, file))) missing.push(name)
     }
 
