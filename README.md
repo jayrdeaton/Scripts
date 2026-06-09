@@ -287,6 +287,19 @@ Options:
   -l, --legacy   Pass --legacy-peer-deps to npm install
 ```
 
+### `jrd yalc-check`
+
+Find projects in a directory that have yalc dependencies (version entries starting with `file:.yalc/` or a `yalc.lock` present).
+
+```
+jrd yalc-check [options]
+
+Options:
+  -d, --dir <dir>   Root directory to scan (default: ~/Developer)
+```
+
+---
+
 ## Requirements
 
 Node >= 20
