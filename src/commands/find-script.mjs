@@ -65,10 +65,7 @@ export const command = Program.command('find-script', '<command>')
     console.log(Color.bold(`\nFound ${results.length} project${results.length !== 1 ? 's' : ''}:\n`))
 
     for (const result of results) {
-      const label =
-        result.projectName && result.projectName !== result.dir
-          ? `${Color.bold(result.dir)} ${Color.faint(`(${result.projectName})`)}`
-          : Color.bold(result.dir)
+      const label = result.projectName && result.projectName !== result.dir ? `${Color.bold(result.dir)} ${Color.faint(`(${result.projectName})`)}` : Color.bold(result.dir)
 
       console.log(`  ${label}`)
 

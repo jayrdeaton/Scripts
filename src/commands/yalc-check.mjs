@@ -77,10 +77,7 @@ export const command = Program.command('yalc-check')
     console.log(Color.bold(`\n${results.length} project${results.length !== 1 ? 's' : ''} with yalc dependencies:\n`))
 
     for (const result of results) {
-      const label =
-        result.projectName && result.projectName !== result.dir
-          ? `${Color.bold(result.dir)} ${Color.faint(`(${result.projectName})`)}`
-          : Color.bold(result.dir)
+      const label = result.projectName && result.projectName !== result.dir ? `${Color.bold(result.dir)} ${Color.faint(`(${result.projectName})`)}` : Color.bold(result.dir)
 
       const lockNote = result.hasLock && !result.found.length ? Color.yellow('  yalc.lock present') : ''
       console.log(`  ${label}${lockNote}`)
