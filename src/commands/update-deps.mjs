@@ -10,7 +10,9 @@ function exec(cmd) {
 }
 
 function latestPackages(deps = {}) {
-  return Object.keys(deps).map((name) => `${name}@latest`)
+  return Object.entries(deps)
+    .filter(([, version]) => /^\^?[\d*]/.test(version))
+    .map(([name]) => `${name}@latest`)
 }
 
 export const command = Program.command('update-deps')

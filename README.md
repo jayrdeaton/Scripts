@@ -321,7 +321,7 @@ jrd update-boilerplate
 
 ### `jrd update-deps`
 
-Update all npm dependencies to `@latest`. Automatically runs `npx expo install --fix` if the project uses Expo.
+Update all npm dependencies to `@latest`. Automatically runs `npx expo install --fix` if the project uses Expo. Skips any dependency whose version is not a plain version number — `file:`, `yalc:`, `link:`, `workspace:`, and similar non-registry entries are left untouched.
 
 ```
 jrd update-deps [options]
