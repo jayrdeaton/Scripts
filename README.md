@@ -149,6 +149,21 @@ Example: `jrd find-dep react-native expo`
 
 ---
 
+### `jrd find-script`
+
+Find projects in a directory whose `package.json` scripts contain an exact command value.
+
+```
+jrd find-script <command> [options]
+
+Options:
+  -d, --dir <dir>   Root directory to scan (default: ~/Developer)
+```
+
+Example: `jrd find-script "eslint . --fix"`
+
+---
+
 ### `jrd focus`
 
 Bring an application to the front using AppleScript.
