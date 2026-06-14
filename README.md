@@ -254,12 +254,42 @@ jrd rename-season <season> [dir]
 
 ---
 
+### `jrd repo-rulesets`
+
+Find public GitHub repos that have no ruleset attached. Requires `gh auth login`.
+
+```
+jrd repo-rulesets [options]
+
+Options:
+  -u, --user <user>   GitHub username (defaults to authenticated user)
+```
+
+---
+
 ### `jrd repo-status`
 
 Scan a directory of git repos and report which ones have dirty files, untracked files, or unpushed commits.
 
 ```
 jrd repo-status [dir]
+```
+
+---
+
+### `jrd sync-peers`
+
+Sync `@rific` package `peerDependency` floors and `devDependency` versions to match Expo-Starter. Dry run by default.
+
+```
+jrd sync-peers [options]
+
+Options:
+  -s, --starter <path>   Path to Expo-Starter project (default: ~/Developer/Expo-Starter)
+  -r, --root <path>      Root directory containing @rific packages (default: ~/Developer)
+  -d, --dry              Preview changes without writing
+  -i, --install          Run npm install in each changed repo
+  -t, --test             Run npm test in each changed repo (implies --install)
 ```
 
 ---
