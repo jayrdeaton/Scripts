@@ -149,6 +149,19 @@ Example: `jrd find-dep react-native expo`
 
 ---
 
+### `jrd find-overrides`
+
+Find projects in a directory that have an `overrides` field in their `package.json`.
+
+```
+jrd find-overrides [options]
+
+Options:
+  -d, --dir <dir>   Root directory to scan (default: ~/Developer)
+```
+
+---
+
 ### `jrd find-script`
 
 Find projects in a directory whose `package.json` scripts contain an exact command value.
