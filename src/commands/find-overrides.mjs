@@ -67,10 +67,7 @@ export const command = Program.command('find-overrides')
     console.log(Color.bold(`\n${results.length} project${results.length !== 1 ? 's' : ''} with overrides:\n`))
 
     for (const result of results) {
-      const label =
-        result.projectName && result.projectName !== result.dir
-          ? `${Color.bold(result.dir)} ${Color.faint(`(${result.projectName})`)}`
-          : Color.bold(result.dir)
+      const label = result.projectName && result.projectName !== result.dir ? `${Color.bold(result.dir)} ${Color.faint(`(${result.projectName})`)}` : Color.bold(result.dir)
 
       console.log(`  ${label}`)
 
