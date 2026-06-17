@@ -10,6 +10,25 @@ npm install -g @jayrdeaton/scripts
 
 ## Commands
 
+### `jrd apply-ruleset`
+
+Apply a ruleset (from a JSON file) to many repos at once. By default it targets your personally-owned repos; pass `--org <name>` to target an organization instead, or pass an explicit list of repos. A bare repo name resolves to your account (or to `--org` when given); use the `owner/repo` form to target anything else. Streams results as it goes. By default it skips any repo that already has a ruleset of the same name; pass `--overwrite` to update those in place instead. Runs as a dry run unless you pass `--apply`. The JSON file is the create-ruleset body — read-only fields (`id`, `source`, `created_at`, …) are stripped, so a ruleset exported via `gh api /repos/OWNER/REPO/rulesets/ID` can be reused directly. Requires `gh auth login`.
+
+```
+jrd apply-ruleset [repos...] [options]
+
+Options:
+  -f, --file <file>       Path to the ruleset JSON file (required)
+  -o, --org <org>         Target an organization instead of your personal repos
+  -a, --access <access>   Visibility when using selectors: all, private, or public (default: public)
+  -O, --overwrite         Update repos that already have a ruleset of this name, instead of skipping
+  -A, --apply             Actually create the rulesets (default is a dry run)
+```
+
+Example: `jrd apply-ruleset --file ruleset.json` previews against your personal repos; add `--apply` to write.
+
+---
+
 ### `jrd base64`
 
 Encode or decode base64 strings and files.
@@ -272,6 +291,25 @@ Options:
 
 ---
 
+### `jrd privatize`
+
+Make repos private, and optionally archive them. By default it targets your personally-owned repos; pass `--org <name>` to target an organization instead, or pass an explicit list of repos. A bare repo name resolves to your account (or to `--org` when given); use the `owner/repo` form to target anything else. The main use case: hide archived repos that still show on your profile by making them private (`--archived`). Archived repos are read-only on GitHub, so for each one the command transparently unarchives, sets it private, then re-archives — preserving the archived state. Use `--archive` to also archive repos that aren't archived yet. Repos already in the desired state are skipped. Runs as a dry run unless you pass `--apply`. Requires `gh auth login`.
+
+```
+jrd privatize [repos...] [options]
+
+Options:
+  -o, --org <org>         Target an organization instead of your personal repos
+  -a, --access <access>   Visibility to list: all, private, or public (default: public)
+  -r, --archived          Only target repos that are currently archived
+  -A, --archive           Also archive each repo after making it private
+  -y, --apply             Actually make the changes (default is a dry run)
+```
+
+Example: `jrd privatize --archived` previews making all your archived repos private; add `--apply` to write.
+
+---
+
 ### `jrd rename-season`
 
 Rename files in a directory to `SxEE` format for TV library pickup (e.g. `1x01.mkv`, `1x02.mkv`).
@@ -284,13 +322,15 @@ jrd rename-season <season> [dir]
 
 ### `jrd repo-rulesets`
 
-Find public GitHub repos that have no ruleset attached. Requires `gh auth login`.
+Show your GitHub repos (owner included) and their ruleset status — each repo lists its rulesets with enforcement status and target, or is flagged as having none. By default it shows your personally-owned repos; pass `--org <name>` to target an organization instead. Results stream as they are fetched. Archived repos are skipped. Requires `gh auth login`.
 
 ```
 jrd repo-rulesets [options]
 
 Options:
-  -u, --user <user>   GitHub username (defaults to authenticated user)
+  -o, --org <org>         Target an organization instead of your personal repos
+  -a, --access <access>   Which repos to include: all, private, or public (default: public)
+  -m, --missing           Only show repos that have no ruleset
 ```
 
 ---
