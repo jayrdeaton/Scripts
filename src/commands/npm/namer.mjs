@@ -32,7 +32,7 @@ async function getSynonyms(word) {
   }
 }
 
-export const command = Program.command('npm-namer')
+export const command = Program.command('namer')
   .description('Check npm package name availability, including variations')
   .variable('<name>')
   .option('s', 'synonyms', null, 'Also check synonyms of the name')

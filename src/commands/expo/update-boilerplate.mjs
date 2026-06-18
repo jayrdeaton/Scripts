@@ -25,7 +25,7 @@ export const command = Program.command('update-boilerplate')
     }
 
     log.info('Updating dependencies...')
-    exec('jrd update-deps', { cwd: BOILERPLATE_DIR })
+    exec('jrd npm update', { cwd: BOILERPLATE_DIR })
 
     const status = execSync('git status --porcelain', { cwd: BOILERPLATE_DIR }).toString().trim()
 

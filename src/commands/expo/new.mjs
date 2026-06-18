@@ -21,7 +21,7 @@ function parseWords(name) {
     .filter(Boolean)
 }
 
-export const command = Program.command('new-expo-project')
+export const command = Program.command('new')
   .description('Bootstrap a new Expo project from the boilerplate')
   .option('n', 'name', '<name>', 'Project name')
   .action(async (options) => {

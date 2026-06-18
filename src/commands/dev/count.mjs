@@ -48,7 +48,7 @@ function commaString(n) {
   return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 }
 
-export const command = Program.command('code-count')
+export const command = Program.command('count')
   .description('Count lines of code by file type')
   .variable('[paths...]')
   .option('i', 'ignore', '[types...]', 'ignore files or file types')

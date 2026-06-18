@@ -32,7 +32,7 @@ async function getDownloads(pkg, period) {
   }
 }
 
-export const command = Program.command('npm-downloads')
+export const command = Program.command('downloads')
   .description('List all your npm packages sorted by total downloads')
   .option('u', 'user', '<name>', 'npm username (defaults to npm whoami)')
   .option('p', 'period', '<period>', 'last-day | last-week | last-month | last-year (default: last-month)')

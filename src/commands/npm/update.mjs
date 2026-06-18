@@ -15,7 +15,7 @@ function latestPackages(deps = {}) {
     .map(([name]) => `${name}@latest`)
 }
 
-export const command = Program.command('update-deps')
+export const command = Program.command('update')
   .description('Update all npm deps to @latest, then run expo install --fix if applicable')
   .option('d', 'dev', null, 'Only update devDependencies')
   .option('p', 'prod', null, 'Only update dependencies')

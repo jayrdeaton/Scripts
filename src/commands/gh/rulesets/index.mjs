@@ -25,7 +25,7 @@ function repoLabel(repo) {
   return `${Color.faint(`${repo.owner}/`)}${Color.bold(repo.name)}${repo.private ? Color.faint(' (private)') : ''}`
 }
 
-export const command = Program.command('repo-rulesets')
+export const command = Program.command('rulesets')
   .description('Show your repos and their ruleset status. Requires `gh auth login`.')
   .option('o', 'org', '<org>', 'Target an organization instead of your personal repos')
   .option('a', 'access', '<access>', 'Which repos to include: all, private, or public (default: public)')

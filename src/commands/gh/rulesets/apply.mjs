@@ -33,7 +33,7 @@ function sanitize(raw) {
   return body
 }
 
-export const command = Program.command('apply-ruleset')
+export const command = Program.command('apply')
   .description('Apply a ruleset (from a JSON file) to many repos. Dry-run unless --apply. Requires `gh auth login`.')
   .variable('[repos...]')
   .option('f', 'file', '<file>', 'Path to the ruleset JSON file (required)')
