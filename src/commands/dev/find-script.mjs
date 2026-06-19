@@ -50,7 +50,7 @@ export const command = Program.command('find-script', '<command>')
         continue
       }
 
-      spinner.message(name)
+      spinner.update(name)
       const match = findMatches(join(dir, 'package.json'), target)
       if (match) results.push({ dir: name, ...match })
     }

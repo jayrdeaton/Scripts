@@ -44,7 +44,7 @@ export const command = Program.command('bump-ota')
 
     writeFileSync(filePath, source.replace(pattern, `$1${next}`))
 
-    spinner.message('Committing...')
+    spinner.update('Committing...')
     try {
       execSync(`git add ${filePath}`)
       execSync(`git commit -m "otaVersion ${current} -> ${next}"`)

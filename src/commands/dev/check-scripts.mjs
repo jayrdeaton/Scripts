@@ -49,7 +49,7 @@ export const command = Program.command('check-scripts', '[scripts...]')
       } catch {
         continue
       }
-      spinner.message(entry)
+      spinner.update(entry)
       const result = loadProject(join(dir, 'package.json'))
       if (result) projects.push({ dir: entry, ...result })
     }

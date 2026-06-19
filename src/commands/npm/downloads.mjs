@@ -63,7 +63,7 @@ export const command = Program.command('downloads')
       period = `${yyyy}-${mm}-01:${yyyy}-${mm}-${dd}`
     }
 
-    spinner.message(`Fetching packages for ${username}...`)
+    spinner.update(`Fetching packages for ${username}...`)
     const packages = await getAllPackages(username)
 
     if (packages.length === 0) {
@@ -71,7 +71,7 @@ export const command = Program.command('downloads')
       return
     }
 
-    spinner.message(`Fetching download counts (${period})...`)
+    spinner.update(`Fetching download counts (${period})...`)
     const results = await Promise.all(packages.map(async (name) => ({ name, downloads: await getDownloads(name, period) })))
 
     spinner.succeed(`${packages.length} packages · ${period}`)

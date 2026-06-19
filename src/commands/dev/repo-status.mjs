@@ -60,7 +60,7 @@ export const command = Program.command('repo-status')
         }
       })
       .map((name) => {
-        spinner.message(name)
+        spinner.update(name)
         return { name, ...getGitStatus(join(root, name)) }
       })
       .filter((r) => r.isRepo)

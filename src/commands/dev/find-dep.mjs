@@ -61,7 +61,7 @@ export const command = Program.command('find-dep', '[deps...]')
         continue
       }
 
-      spinner.message(name)
+      spinner.update(name)
       const pkgPath = join(dir, 'package.json')
       const match = findMatches(pkgPath, targets)
       if (match) results.push({ dir: name, ...match })

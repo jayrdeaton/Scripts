@@ -112,7 +112,7 @@ export const command = Program.command('apply')
     try {
       let done = 0
       for (const fullName of repos) {
-        loader.message(`${done}/${repos.length}  ${Color.faint(fullName)}`)
+        loader.update(`${done}/${repos.length}  ${Color.faint(fullName)}`)
         done++
 
         let existing = []
@@ -126,18 +126,14 @@ export const command = Program.command('apply')
         // Already present and not overwriting → skip.
         if (match && !options.overwrite) {
           skipped++
-          loader.stop()
-          console.log(`  ${Color.bold(fullName)}  ${Color.faint(`skip — already has "${body.name}"`)}`)
-          loader.start()
+          loader.log(`  ${Color.bold(fullName)}  ${Color.faint(`skip — already has "${body.name}"`)}`)
           continue
         }
 
         const verb = match ? 'overwrite' : 'create'
 
         if (!options.apply) {
-          loader.stop()
-          console.log(`  ${Color.bold(fullName)}  ${Color.green(`would ${verb}`)}`)
-          loader.start()
+          loader.log(`  ${Color.bold(fullName)}  ${Color.green(`would ${verb}`)}`)
           continue
         }
 
@@ -146,15 +142,11 @@ export const command = Program.command('apply')
           else await ghWrite('POST', `/repos/${fullName}/rulesets`, bodyFile)
           if (match) updated++
           else created++
-          loader.stop()
-          console.log(`  ${Color.bold(fullName)}  ${Color.green(match ? 'overwritten' : 'created')}`)
-          loader.start()
+          loader.log(`  ${Color.bold(fullName)}  ${Color.green(match ? 'overwritten' : 'created')}`, Color.green('✓'))
         } catch (err) {
           failed++
           const reason = (err.stderr || err.message || '').split('\n').find((l) => l.trim()) ?? 'unknown error'
-          loader.stop()
-          console.log(`  ${Color.bold(fullName)}  ${Color.red(`failed — ${reason.trim()}`)}`)
-          loader.start()
+          loader.log(`  ${Color.bold(fullName)}  ${Color.red(`failed — ${reason.trim()}`)}`, Color.red('✗'))
         }
       }
     } finally {

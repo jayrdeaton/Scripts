@@ -108,14 +108,12 @@ export const command = Program.command('clean-junk')
 
     let deleted = 0
     for (const item of targets) {
-      deleteSpinner.message(basename(item))
+      deleteSpinner.update(basename(item))
       try {
         rmSync(item, { recursive: true, force: true })
         deleted++
       } catch (err) {
-        deleteSpinner.stop()
-        console.error(Color.red(`  Failed: ${item} — ${err.message}`))
-        deleteSpinner.start()
+        deleteSpinner.log(`  Failed: ${item} — ${err.message}`, Color.red('✗'))
       }
     }
 

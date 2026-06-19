@@ -38,7 +38,7 @@ export const command = Program.command('including', '[file]')
         continue
       }
 
-      spinner.message(name)
+      spinner.update(name)
 
       if (!existsSync(join(dir, 'package.json'))) continue
       if (existsSync(join(dir, file))) found.push(name)

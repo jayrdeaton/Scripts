@@ -54,7 +54,7 @@ export const command = Program.command('yalc-check')
         continue
       }
 
-      spinner.message(name)
+      spinner.update(name)
 
       const pkgPath = join(dir, 'package.json')
       if (!existsSync(pkgPath)) continue

@@ -69,7 +69,7 @@ export const command = Program.command('count')
       const path = allPaths[i]
       const ext = extname(path)
       if (!ext) continue
-      spinner.message(`Checking files ${i + 1} / ${allPaths.length}`)
+      spinner.update(`Checking files ${i + 1} / ${allPaths.length}`)
       totals[ext] = (totals[ext] ?? 0) + (await countLines(path))
     }
 

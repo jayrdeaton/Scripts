@@ -12,21 +12,18 @@ async function gh(path) {
   return JSON.parse(stdout)
 }
 
-// Archived repos are read-only, so visibility can't be changed while archived.
-// Each step is its own PATCH: unarchive → set private → re-archive.
 async function ghPatch(fullName, fields) {
   await execFileAsync('gh', ['api', '-X', 'PATCH', `/repos/${fullName}`, ...fields], {
     maxBuffer: 64 * 1024 * 1024
   })
 }
 
-export const command = Program.command('privatize')
-  .description('Make repos private (and optionally archive them). Dry-run unless --apply. Requires `gh auth login`.')
+export const command = Program.command('archive')
+  .description('Archive repos (and optionally make them private). Dry-run unless --apply. Requires `gh auth login`.')
   .variable('[repos...]')
   .option('o', 'org', '<org>', 'Target an organization instead of your personal repos')
   .option('a', 'access', '<access>', 'Visibility to list: all, private, or public (default: public)')
-  .option('r', 'archived', null, 'Only target repos that are currently archived')
-  .option('A', 'archive', null, 'Also archive each repo after making it private')
+  .option('p', 'privatize', null, 'Also make each repo private before archiving')
   .option('y', 'apply', null, 'Actually make the changes (default is a dry run)')
   .action(async (args) => {
     const options = args
@@ -36,12 +33,12 @@ export const command = Program.command('privatize')
       console.error(Color.red(`Invalid --access "${access}". Use one of: all, private, public.`))
       process.exit(1)
     }
+
     const explicit = Array.isArray(args.repos) ? args.repos : args.repos ? [args.repos] : []
 
     const spinner = new Spinner({ text: 'Resolving target repos...' })
     spinner.start()
 
-    // Each repo object: { full_name, private, archived }
     let repos
     try {
       if (explicit.length) {
@@ -60,11 +57,8 @@ export const command = Program.command('privatize')
       process.exit(1)
     }
 
-    if (options.archived) repos = repos.filter((repo) => repo.archived)
-
-    // A repo needs work if it's still public, or if --archive and it isn't archived yet.
-    const willArchive = (repo) => repo.archived || Boolean(options.archive)
-    const needsWork = (repo) => !repo.private || repo.archived !== willArchive(repo)
+    const willPrivatize = (repo) => repo.private || Boolean(options.privatize)
+    const needsWork = (repo) => !repo.archived || (options.privatize && !repo.private)
 
     repos = repos.filter(needsWork).sort((a, b) => a.full_name.localeCompare(b.full_name))
 
@@ -88,14 +82,13 @@ export const command = Program.command('privatize')
       loader.update(`${done}/${repos.length}  ${Color.faint(fullName)}`)
       done++
 
-      // Summarize the planned changes for this repo.
       const present = []
       const past = []
-      if (!repo.private) {
+      if (!repo.private && willPrivatize(repo)) {
         present.push('make private')
         past.push('made private')
       }
-      if (!repo.archived && willArchive(repo)) {
+      if (!repo.archived) {
         present.push('archive')
         past.push('archived')
       }
@@ -106,9 +99,10 @@ export const command = Program.command('privatize')
       }
 
       try {
+        // Archived repos are read-only; unarchive first if we need to change visibility.
         if (repo.archived) await ghPatch(fullName, ['-F', 'archived=false'])
-        if (!repo.private) await ghPatch(fullName, ['-f', 'visibility=private'])
-        if (willArchive(repo)) await ghPatch(fullName, ['-F', 'archived=true'])
+        if (!repo.private && willPrivatize(repo)) await ghPatch(fullName, ['-f', 'visibility=private'])
+        if (!repo.archived) await ghPatch(fullName, ['-F', 'archived=true'])
         changed++
         loader.log(`  ${Color.bold(fullName)}  ${Color.green(past.join(' + '))}`, Color.green('✓'))
       } catch (err) {

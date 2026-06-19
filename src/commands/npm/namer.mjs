@@ -44,14 +44,14 @@ export const command = Program.command('namer')
     const namesToCheck = new Set(getVariants(name))
 
     if (synonyms) {
-      spinner.message('Fetching synonyms...')
+      spinner.update('Fetching synonyms...')
       const syns = await getSynonyms(name)
       for (const syn of syns) {
         for (const variant of getVariants(syn)) {
           namesToCheck.add(variant)
         }
       }
-      spinner.message(`Checking ${namesToCheck.size} names...`)
+      spinner.update(`Checking ${namesToCheck.size} names...`)
     }
 
     const results = await Promise.all([...namesToCheck].map(async (n) => ({ name: n, available: await isAvailable(n) })))

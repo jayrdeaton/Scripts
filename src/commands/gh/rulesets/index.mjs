@@ -73,7 +73,7 @@ export const command = Program.command('rulesets')
     loader.start()
 
     for (const repo of repos) {
-      loader.message(`${done}/${repos.length}  ${Color.faint(repo.full_name)}`)
+      loader.update(`${done}/${repos.length}  ${Color.faint(repo.full_name)}`)
       let rulesets = []
       try {
         rulesets = await gh(`/repos/${repo.full_name}/rulesets`)
@@ -86,24 +86,20 @@ export const command = Program.command('rulesets')
 
       if (options.missing) {
         if (!rulesets.length) {
-          loader.stop()
-          console.log(`  ${repoLabel(repo)}  ${Color.yellow('no ruleset')}`)
-          loader.start()
+          loader.log(`  ${repoLabel(repo)}  ${Color.yellow('no ruleset')}`, Color.yellow('⚠'))
         }
         continue
       }
 
-      loader.stop()
       if (!rulesets.length) {
-        console.log(`  ${repoLabel(repo)}  ${Color.yellow('no ruleset')}`)
+        loader.log(`  ${repoLabel(repo)}  ${Color.yellow('no ruleset')}`, Color.yellow('⚠'))
       } else {
-        console.log(`  ${repoLabel(repo)}`)
+        loader.log(`  ${repoLabel(repo)}`)
         for (const ruleset of rulesets) {
           const target = ruleset.target ? Color.faint(`[${ruleset.target}]`) : ''
-          console.log(`    ${Color.cyan(ruleset.name)}  ${enforcementColor(ruleset.enforcement, ruleset.enforcement)} ${target}`)
+          loader.log(`    ${Color.cyan(ruleset.name)}  ${enforcementColor(ruleset.enforcement, ruleset.enforcement)} ${target}`, '')
         }
       }
-      loader.start()
     }
 
     const withoutCount = repos.length - withCount

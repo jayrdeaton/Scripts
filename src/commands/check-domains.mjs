@@ -79,13 +79,10 @@ export const command = Program.command('check-domains')
       try {
         const ok = await isAvailable(domain)
         checked++
-        spinner.message(`${checked}/${domains.length}  ${Color.faint(domain)}`)
+        spinner.update(`${checked}/${domains.length}  ${Color.faint(domain)}`)
         if (ok) {
           available.push(domain)
-          spinner.stop()
-          console.log(`  ${Color.green(domain)}`)
-          spinner.start()
-          spinner.message(`${checked}/${domains.length}  ${Color.faint(domain)}`)
+          spinner.log(`  ${Color.green(domain)}`, Color.green('✓'))
         }
       } catch {
         errors++

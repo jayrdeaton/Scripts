@@ -81,7 +81,7 @@ export const command = Program.command('clean-builds')
 
     const toDelete = []
     for (const { root, path: projectDir } of projects) {
-      spinner.message(projectDir.split('/').at(-1))
+      spinner.update(projectDir.split('/').at(-1))
       for (const targetPath of findTargets(projectDir, targets)) {
         const size = getDirSize(targetPath)
         toDelete.push({ root, path: targetPath, size })
@@ -113,15 +113,13 @@ export const command = Program.command('clean-builds')
     let deleted = 0
     let freed = 0
     for (const { path, size } of toDelete) {
-      deleteSpinner.message(path.split('/').slice(-2).join('/'))
+      deleteSpinner.update(path.split('/').slice(-2).join('/'))
       try {
         rmSync(path, { recursive: true, force: true })
         deleted++
         freed += size
       } catch (err) {
-        deleteSpinner.stop()
-        console.error(Color.red(`  Failed: ${path} — ${err.message}`))
-        deleteSpinner.start()
+        deleteSpinner.log(`  Failed: ${path} — ${err.message}`, Color.red('✗'))
       }
     }
 

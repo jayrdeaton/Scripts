@@ -49,7 +49,7 @@ export const command = Program.command('folder-sizes')
     const folders = entries
       .filter((e) => e.isDirectory())
       .map((e) => {
-        spinner.message(e.name)
+        spinner.update(e.name)
         const size = getDirSize(join(root, e.name))
         return { name: e.name, size }
       })
