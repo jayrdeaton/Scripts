@@ -44,6 +44,38 @@ Options:
 
 Example: `jrd gh rulesets apply --file ruleset.json` previews against your personal repos; add `--apply` to write.
 
+### `jrd gh repos`
+
+List your repos with visibility and archived state. Requires `gh auth login`.
+
+```
+jrd gh repos [options]
+
+Options:
+  -o, --org <org>         Target an organization instead of your personal repos
+  -a, --access <access>   Filter by visibility: all, private, or public (default: all)
+  -s, --sort <field>      Sort field: name, created, updated, pushed (default: name)
+  -d, --desc              Reverse sort order
+  -A, --archived          Show only archived repos
+  -f, --forks             Include forks (excluded by default)
+```
+
+### `jrd gh archive`
+
+Archive repos, and optionally make them private. By default it targets your personally-owned public repos; pass `--org <name>` to target an organization instead, or pass an explicit list of repos. A bare repo name resolves to your account (or to `--org` when given); use the `owner/repo` form to target anything else. Repos that are already archived (and already private when `--privatize` is given) are skipped. Archived repos are read-only on GitHub, so if a repo is already archived but still public and you pass `--privatize`, the command transparently unarchives, sets it private, then re-archives. Runs as a dry run unless you pass `--apply`. Requires `gh auth login`.
+
+```
+jrd gh archive [repos...] [options]
+
+Options:
+  -o, --org <org>         Target an organization instead of your personal repos
+  -a, --access <access>   Visibility to list: all, private, or public (default: public)
+  -p, --privatize         Also make each repo private before archiving
+  -y, --apply             Actually make the changes (default is a dry run)
+```
+
+Example: `jrd gh archive` previews archiving all your public repos; add `--apply` to write.
+
 ### `jrd gh privatize`
 
 Make repos private, and optionally archive them. By default it targets your personally-owned repos; pass `--org <name>` to target an organization instead, or pass an explicit list of repos. A bare repo name resolves to your account (or to `--org` when given); use the `owner/repo` form to target anything else. The main use case: hide archived repos that still show on your profile by making them private (`--archived`). Archived repos are read-only on GitHub, so for each one the command transparently unarchives, sets it private, then re-archives — preserving the archived state. Use `--archive` to also archive repos that aren't archived yet. Repos already in the desired state are skipped. Runs as a dry run unless you pass `--apply`. Requires `gh auth login`.
