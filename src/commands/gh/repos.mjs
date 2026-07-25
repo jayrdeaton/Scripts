@@ -77,9 +77,7 @@ export const command = Program.command('repos')
     for (const repo of repos) {
       const name = repo.full_name.padEnd(nameWidth)
 
-      const visibility = repo.private
-        ? Color.yellow('private')
-        : Color.green('public ')
+      const visibility = repo.private ? Color.yellow('private') : Color.green('public ')
 
       const archivedTag = repo.archived ? `  ${Color.faint('archived')}` : ''
 
@@ -91,12 +89,7 @@ export const command = Program.command('repos')
     const pub = repos.filter((r) => !r.private).length
     const arc = repos.filter((r) => r.archived).length
 
-    const parts = [
-      Color.bold(`${total}`),
-      'repos',
-      `· ${Color.green(pub)} public`,
-      `· ${Color.yellow(priv)} private`,
-    ]
+    const parts = [Color.bold(`${total}`), 'repos', `· ${Color.green(pub)} public`, `· ${Color.yellow(priv)} private`]
     if (arc) parts.push(`· ${Color.faint(arc)} archived`)
 
     console.log(`\n  ${parts.join(' ')}\n`)

@@ -3,7 +3,7 @@ import { existsSync, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
-import { Program, Shell, configure } from 'termkit'
+import { configure, Program, Shell } from 'termkit'
 
 configure({ color: '#8B5CF6' })
 
