@@ -166,6 +166,18 @@ Options:
   -l, --legacy   Pass --legacy-peer-deps to npm install
 ```
 
+### `jrd npm update-rific`
+
+Update any detected `@rific/*` packages to `@latest` across one or more projects. Accepts a list of directories; defaults to the current directory when none are given. Skips any `@rific` dependency whose version is not a plain version number (`file:`, `link:`, `workspace:`, and similar).
+
+```
+jrd npm update-rific [dirs...] [options]
+
+Options:
+  -l, --legacy   Pass --legacy-peer-deps to npm install
+  -d, --dry      Preview which packages would be updated without installing
+```
+
 ## `dev` — Across your Developer folder
 
 Commands that operate over the projects in `~/Developer` (override with `--dir` where supported).
