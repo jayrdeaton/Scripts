@@ -17,23 +17,23 @@
     "src"
   ],
   "scripts": {
+    "ci": "npm run lint",
     "fix": "npm run lint:fix",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "release:major": "npm version major && git push --follow-tags",
-    "release:minor": "npm version minor && git push --follow-tags",
-    "release:patch": "npm version patch && git push --follow-tags",
+    "release": "git push --follow-tags",
+    "release:major": "npm version major && npm run release",
+    "release:minor": "npm version minor && npm run release",
+    "release:patch": "npm version patch && npm run release",
     "preversion": "npm ci && npm run lint"
   },
+  "prettier": "@infinitetoken/eslint-config/prettier",
   "dependencies": {
     "termkit": "^2.4.8"
   },
   "devDependencies": {
+    "@infinitetoken/eslint-config": "^0.1.4",
     "eslint": "^10.8.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-package-json": "^1.6.1",
-    "eslint-plugin-prettier": "^5.5.6",
-    "eslint-plugin-simple-import-sort": "^14.0.0",
     "prettier": "^3.9.6"
   },
   "engines": {

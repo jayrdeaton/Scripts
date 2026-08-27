@@ -1,35 +1,20 @@
 const { defineConfig } = require('eslint/config')
-const prettierRecommended = require('eslint-plugin-prettier/recommended')
-const simpleImportSort = require('eslint-plugin-simple-import-sort')
-const packageJson = require('eslint-plugin-package-json')
+const base = require('@infinitetoken/eslint-config/npm-package')
 
 module.exports = defineConfig([
+  ...base,
   {
-    ignores: ['node_modules/**']
+    // this repo's source is plain .js/.mjs (no TypeScript), so re-include the
+    // file types the shared preset ignores by default (it assumes .js/.mjs are build output)
+    ignores: ['!**/*.js', '!**/*.mjs']
   },
-  prettierRecommended,
-  packageJson.configs.recommended,
   {
-    extends: [packageJson.configs.recommended],
-    files: ['package.json'],
     rules: {
-      'package-json/order-properties': 'warn',
-      'package-json/sort-collections': 'warn',
+      'no-console': 'off',
       'package-json/require-exports': 'off',
       'package-json/require-repository': 'off',
       'package-json/require-sideEffects': 'off',
       'package-json/require-attribution': 'off'
-    }
-  },
-  {
-    plugins: {
-      'simple-import-sort': simpleImportSort
-    },
-    rules: {
-      'prettier/prettier': 'warn',
-      'simple-import-sort/imports': 'warn',
-      'simple-import-sort/exports': 'warn',
-      'no-console': 'off'
     }
   }
 ])
