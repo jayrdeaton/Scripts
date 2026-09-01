@@ -17,7 +17,6 @@
     "src"
   ],
   "scripts": {
-    "ci": "npm run lint",
     "fix": "npm run lint:fix",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
@@ -25,7 +24,8 @@
     "release:major": "npm version major && npm run release",
     "release:minor": "npm version minor && npm run release",
     "release:patch": "npm version patch && npm run release",
-    "preversion": "npm ci && npm run lint"
+    "verify": "npm run lint",
+    "preversion": "npm ci && npm run verify"
   },
   "prettier": "@infinitetoken/eslint-config/prettier",
   "dependencies": {
