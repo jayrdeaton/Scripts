@@ -29,7 +29,7 @@
   },
   "prettier": "@infinitetoken/eslint-config/prettier",
   "dependencies": {
-    "termkit": "^2.4.8"
+    "termkit": "^2.4.12"
   },
   "devDependencies": {
     "@infinitetoken/eslint-config": "^0.1.4",

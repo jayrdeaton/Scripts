@@ -1,12 +1,12 @@
 import { execSync } from 'node:child_process'
-import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
 import { Color, log, Program } from 'termkit'
 
-const BOILERPLATE_REPO = 'git@github.com:jayrdeaton/Expo-Boilerplate.git'
-const BOILERPLATE_DIR = join(homedir(), 'Developer', 'Expo-Boilerplate')
+const BOILERPLATE_REPO = 'git@github.com:jayrdeaton/Expo-Starter.git'
+const BOILERPLATE_DIR = join(homedir(), 'Developer', 'Expo-Starter')
 const DEV_DIR = join(homedir(), 'Developer')
 
 function exec(cmd, opts = {}) {
@@ -47,12 +47,13 @@ export const command = Program.command('new')
     }
 
     log.info(`Creating ${displayName}...`)
-    cpSync(BOILERPLATE_DIR, targetDir, {
-      recursive: true,
-      filter: (src) => !src.includes('/node_modules/')
-    })
-
-    rmSync(join(targetDir, '.git'), { recursive: true, force: true })
+    // git archive exports exactly the tracked, committed tree at HEAD — node_modules, .expo, dist,
+    // coverage, ios/android build output, and any other .gitignore'd cruft are never in it, so this
+    // needs no manual exclude list (and can't drift out of sync with BOILERPLATE_DIR's .gitignore the
+    // way a hand-maintained filter would). Also means an uncommitted local edit in BOILERPLATE_DIR
+    // never leaks into a new project — only committed state does.
+    mkdirSync(targetDir, { recursive: true })
+    exec(`git archive HEAD | tar -x -C "${targetDir}"`, { cwd: BOILERPLATE_DIR })
 
     const pkgPath = join(targetDir, 'package.json')
     const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'))
