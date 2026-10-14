@@ -159,7 +159,7 @@ export const command = Program.command('sync-peers')
     if (totalChanges === 0) {
       log.succeed('All dependencies already aligned.')
     } else if (isDry) {
-      log.info(`${totalChanges} change${totalChanges !== 1 ? 's' : ''} pending — run without --dry to apply`)
+      log.info(`${totalChanges} change${totalChanges !== 1 ? 's' : ''} pending: run without --dry to apply`)
     } else {
       log.succeed(`Applied ${totalChanges} change${totalChanges !== 1 ? 's' : ''}.`)
     }

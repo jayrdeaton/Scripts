@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { Color, log, Program } from 'termkit'
 
 // jrd runs outside `npm run`, so unlike the fleet's old npm-script-based
-// wrappers it never gets npm's automatic node_modules/.bin PATH prepending —
+// wrappers it never gets npm's automatic node_modules/.bin PATH prepending -
 // expo (unlike eas-cli, often installed globally) only resolves locally.
 function withLocalBin(cwd) {
   return { ...process.env, PATH: `${join(cwd, 'node_modules', '.bin')}:${process.env.PATH}` }
@@ -60,7 +60,7 @@ function formatTimestamp(date) {
 }
 
 export const command = Program.command('build', '<profile>')
-  .description('Build an Expo app in the current directory — cloud for preview/production, local prebuild + relocate-artifact for development')
+  .description('Build an Expo app in the current directory: cloud for preview/production, local prebuild + relocate-artifact for development')
   .action(async (options) => {
     const cwd = process.cwd()
     const profile = options.profile

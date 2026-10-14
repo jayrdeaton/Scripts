@@ -70,7 +70,7 @@ export const command = Program.command('update-rific', '[dirs...]')
     if (totalPackages === 0) {
       log.succeed('No @rific packages needed updating.')
     } else if (isDry) {
-      log.info(`${totalPackages} @rific package${totalPackages !== 1 ? 's' : ''} would be updated — run without --dry to apply`)
+      log.info(`${totalPackages} @rific package${totalPackages !== 1 ? 's' : ''} would be updated: run without --dry to apply`)
     } else {
       log.succeed(`Updated ${totalPackages} @rific package${totalPackages !== 1 ? 's' : ''}.`)
     }

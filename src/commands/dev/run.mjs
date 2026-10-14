@@ -71,8 +71,8 @@ async function runConcurrent(cmd, dirs, concurrency) {
 
 export const command = Program.command('run')
   .variable('[dirs...] <command>')
-  .description('Run a shell command across multiple projects under ~/Developer. Dirs come first, command last, e.g. `run Scripts Lumber "npm outdated"` — so you can arrow-up and just replace the command. Omit dirs to target every project under ~/Developer. Sequential by default, or concurrent with --concurrency.')
-  .option('d', 'dir', '[dir]', 'Root directory projects live under — bare names resolve against this (default: ~/Developer)')
+  .description('Run a shell command across multiple projects under ~/Developer. Dirs come first, command last, e.g. `run Scripts Lumber "npm outdated"`, so you can arrow-up and just replace the command. Omit dirs to target every project under ~/Developer. Sequential by default, or concurrent with --concurrency.')
+  .option('d', 'dir', '[dir]', 'Root directory projects live under: bare names resolve against this (default: ~/Developer)')
   .option('c', 'concurrency', '<n>', 'Run up to n directories at once concurrently (default: sequential, one at a time)')
   .action(async (options) => {
     const cmd = options.command
@@ -93,5 +93,5 @@ export const command = Program.command('run')
     if (concurrency > 1) await runConcurrent(cmd, dirs, concurrency)
     else runSequential(cmd, dirs)
 
-    console.log(Color.green(`Done — ${dirs.length} project${dirs.length !== 1 ? 's' : ''}.`))
+    console.log(Color.green(`Done: ${dirs.length} project${dirs.length !== 1 ? 's' : ''}.`))
   })

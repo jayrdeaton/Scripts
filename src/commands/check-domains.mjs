@@ -16,7 +16,7 @@ function expandPattern(pattern) {
   if (dot === -1) throw new Error(`Pattern must include a TLD, e.g. ??fu.com`)
   const namePart = pattern.slice(0, dot).toLowerCase()
   const tld = pattern.slice(dot + 1).toLowerCase()
-  if (!RDAP[tld]) throw new Error(`.${tld} is not supported — supported TLDs: ${Object.keys(RDAP).join(', ')}`)
+  if (!RDAP[tld]) throw new Error(`.${tld} is not supported. Supported TLDs: ${Object.keys(RDAP).join(', ')}`)
 
   function expand(s) {
     const i = s.indexOf('?')

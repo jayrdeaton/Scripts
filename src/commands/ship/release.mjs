@@ -16,7 +16,7 @@ export const command = Program.command('release', '<bump>')
     const bump = options.bump
 
     if (!BUMPS.includes(bump)) {
-      log.fail(`"${bump}" is not a valid bump — use one of: ${BUMPS.join(', ')}`)
+      log.fail(`"${bump}" is not a valid bump: use one of: ${BUMPS.join(', ')}`)
       process.exit(1)
     }
 

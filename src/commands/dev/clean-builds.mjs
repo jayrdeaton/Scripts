@@ -65,7 +65,7 @@ function resolveProjects(dirs) {
 }
 
 export const command = Program.command('clean-builds')
-  .description('Delete build artifacts across repos — dry run by default')
+  .description('Delete build artifacts across repos: dry run by default')
   .variable('[dir...]')
   .option('m', 'modules', null, 'Also delete node_modules')
   .option('D', 'delete', null, 'Actually delete (default is dry run)')
@@ -98,7 +98,7 @@ export const command = Program.command('clean-builds')
     const totalSize = toDelete.reduce((sum, f) => sum + f.size, 0)
 
     if (!options.delete) {
-      console.log(Color.bold.yellow('\nDry run — pass --delete to remove:\n'))
+      console.log(Color.bold.yellow('\nDry run. Pass --delete to remove:\n'))
       for (const { root, path, size } of toDelete) {
         const rel = path.replace(root + '/', '')
         console.log(`  ${Color.red(rel)}  ${Color.faint(formatSize(size))}`)
@@ -119,7 +119,7 @@ export const command = Program.command('clean-builds')
         deleted++
         freed += size
       } catch (err) {
-        deleteSpinner.log(`  Failed: ${path} — ${err.message}`, Color.red('✗'))
+        deleteSpinner.log(`  Failed: ${path} (${err.message})`, Color.red('✗'))
       }
     }
 

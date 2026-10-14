@@ -12,11 +12,11 @@ npm install -g @jayrdeaton/scripts
 
 Commands are grouped into namespaces (`gh`, `expo`, `npm`, `dev`); general-purpose utilities live at the top level. Run `jrd help`, or `jrd <namespace> help`, to see the tree.
 
-## `gh` — GitHub
+## `gh` - GitHub
 
 ### `jrd gh rulesets`
 
-Show your GitHub repos (owner included) and their ruleset status — each repo lists its rulesets with enforcement status and target, or is flagged as having none. By default it shows your personally-owned repos; pass `--org <name>` to target an organization instead. Results stream as they are fetched. Archived repos are skipped. Requires `gh auth login`.
+Show your GitHub repos (owner included) and their ruleset status - each repo lists its rulesets with enforcement status and target, or is flagged as having none. By default it shows your personally-owned repos; pass `--org <name>` to target an organization instead. Results stream as they are fetched. Archived repos are skipped. Requires `gh auth login`.
 
 ```
 jrd gh rulesets [options]
@@ -29,7 +29,7 @@ Options:
 
 ### `jrd gh rulesets apply`
 
-Apply a ruleset (from a JSON file) to many repos at once. By default it targets your personally-owned repos; pass `--org <name>` to target an organization instead, or pass an explicit list of repos. A bare repo name resolves to your account (or to `--org` when given); use the `owner/repo` form to target anything else. Streams results as it goes. By default it skips any repo that already has a ruleset of the same name; pass `--overwrite` to update those in place instead. Runs as a dry run unless you pass `--apply`. The JSON file is the create-ruleset body — read-only fields (`id`, `source`, `created_at`, …) are stripped, so a ruleset exported via `gh api /repos/OWNER/REPO/rulesets/ID` can be reused directly. Requires `gh auth login`.
+Apply a ruleset (from a JSON file) to many repos at once. By default it targets your personally-owned repos; pass `--org <name>` to target an organization instead, or pass an explicit list of repos. A bare repo name resolves to your account (or to `--org` when given); use the `owner/repo` form to target anything else. Streams results as it goes. By default it skips any repo that already has a ruleset of the same name; pass `--overwrite` to update those in place instead. Runs as a dry run unless you pass `--apply`. The JSON file is the create-ruleset body - read-only fields (`id`, `source`, `created_at`, …) are stripped, so a ruleset exported via `gh api /repos/OWNER/REPO/rulesets/ID` can be reused directly. Requires `gh auth login`.
 
 ```
 jrd gh rulesets apply [repos...] [options]
@@ -78,7 +78,7 @@ Example: `jrd gh archive` previews archiving all your public repos; add `--apply
 
 ### `jrd gh privatize`
 
-Make repos private, and optionally archive them. By default it targets your personally-owned repos; pass `--org <name>` to target an organization instead, or pass an explicit list of repos. A bare repo name resolves to your account (or to `--org` when given); use the `owner/repo` form to target anything else. The main use case: hide archived repos that still show on your profile by making them private (`--archived`). Archived repos are read-only on GitHub, so for each one the command transparently unarchives, sets it private, then re-archives — preserving the archived state. Use `--archive` to also archive repos that aren't archived yet. Repos already in the desired state are skipped. Runs as a dry run unless you pass `--apply`. Requires `gh auth login`.
+Make repos private, and optionally archive them. By default it targets your personally-owned repos; pass `--org <name>` to target an organization instead, or pass an explicit list of repos. A bare repo name resolves to your account (or to `--org` when given); use the `owner/repo` form to target anything else. The main use case: hide archived repos that still show on your profile by making them private (`--archived`). Archived repos are read-only on GitHub, so for each one the command transparently unarchives, sets it private, then re-archives - preserving the archived state. Use `--archive` to also archive repos that aren't archived yet. Repos already in the desired state are skipped. Runs as a dry run unless you pass `--apply`. Requires `gh auth login`.
 
 ```
 jrd gh privatize [repos...] [options]
@@ -93,7 +93,7 @@ Options:
 
 Example: `jrd gh privatize --archived` previews making all your archived repos private; add `--apply` to write.
 
-## `expo` — Expo projects
+## `expo` - Expo projects
 
 ### `jrd expo bump-ota`
 
@@ -121,13 +121,13 @@ Example: `jrd expo new --name MyApp`
 
 ### `jrd expo update-boilerplate`
 
-Update the Expo boilerplate repo — clones it if absent, runs `jrd npm update`, lint-fixes, type-checks, tests, then commits and pushes the result.
+Update the Expo boilerplate repo - clones it if absent, runs `jrd npm update`, lint-fixes, type-checks, tests, then commits and pushes the result.
 
 ```
 jrd expo update-boilerplate
 ```
 
-## `npm` — npm packages
+## `npm` - npm packages
 
 ### `jrd npm downloads`
 
@@ -155,7 +155,7 @@ Options:
 
 ### `jrd npm update`
 
-Update all npm dependencies of the project in the current directory to `@latest`. Automatically runs `npx expo install --fix` if the project uses Expo. Skips any dependency whose version is not a plain version number — `file:`, `yalc:`, `link:`, `workspace:`, and similar non-registry entries are left untouched.
+Update all npm dependencies of the project in the current directory to `@latest`. Automatically runs `npx expo install --fix` if the project uses Expo. Skips any dependency whose version is not a plain version number - `file:`, `yalc:`, `link:`, `workspace:`, and similar non-registry entries are left untouched.
 
 ```
 jrd npm update [options]
@@ -178,7 +178,7 @@ Options:
   -d, --dry      Preview which packages would be updated without installing
 ```
 
-## `dev` — Across your Developer folder
+## `dev` - Across your Developer folder
 
 Commands that operate over the projects in `~/Developer` (override with `--dir` where supported).
 
@@ -336,7 +336,7 @@ Scan a directory of git repos and report which ones have dirty files, untracked 
 jrd dev repo-status [dir]
 ```
 
-## `data` — Encode / decode
+## `data` - Encode / decode
 
 ### `jrd data base64`
 

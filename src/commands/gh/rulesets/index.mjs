@@ -12,7 +12,7 @@ async function gh(path) {
   return JSON.parse(stdout)
 }
 
-// termkit's Color.* are getters on a shared mutable builder — storing them in a
+// termkit's Color.* are getters on a shared mutable builder - storing them in a
 // map accumulates styles, so resolve the color fresh at call time instead.
 function enforcementColor(enforcement, text) {
   if (enforcement === 'active') return Color.green(text)
@@ -78,7 +78,7 @@ export const command = Program.command('rulesets')
       try {
         rulesets = await gh(`/repos/${repo.full_name}/rulesets`)
       } catch {
-        // API error means no access or rulesets not available — treat as none
+        // API error means no access or rulesets not available - treat as none
       }
       done++
 

@@ -80,7 +80,7 @@ export const command = Program.command('downloads')
     const orgs = [...new Set(sorted.filter((p) => p.name.startsWith('@')).map((p) => p.name.split('/')[0]))]
     const maxWidth = String(sorted[0]?.downloads ?? 0).length
 
-    console.log(`\n${Color.bold(username)} — ${Color.faint(period)}`)
+    console.log(`\n${Color.bold(username)}: ${Color.faint(period)}`)
     if (orgs.length > 0) console.log(Color.faint(`orgs: ${orgs.join('  ')}`))
     console.log()
 

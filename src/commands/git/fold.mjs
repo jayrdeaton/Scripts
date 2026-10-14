@@ -34,7 +34,7 @@ export const command = Program.command('fold')
       process.exit(1)
     }
     if (count != null && count >= total) {
-      console.error(Color.red(`Cannot fold ${count} commits — that includes the initial commit. Max is ${total - 1}.`))
+      console.error(Color.red(`Cannot fold ${count} commits: that includes the initial commit. Max is ${total - 1}.`))
       process.exit(1)
     }
 

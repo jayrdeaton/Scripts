@@ -18,7 +18,7 @@ const load = async (file) => (await import(pathToFileURL(file).href)).command
 //  - a `.mjs` file is a leaf command (exports `command`)
 //  - a directory is a namespace; its `index.mjs` defines the parent command
 //    (a description-only group, or a parent that also has its own action), and
-//    its remaining entries become subcommands — nested to any depth.
+//    its remaining entries become subcommands - nested to any depth.
 async function build(dir) {
   const commands = []
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -42,7 +42,7 @@ try {
   if (process.argv.length <= 2) {
     await new Shell(program, { mode: 'free', prompt: 'jrd' }).run()
   } else {
-    // Parse from the root command directly — Program.parse() relies on a global
+    // Parse from the root command directly - Program.parse() relies on a global
     // that points at the last-created command, not this one.
     await program.parse(process.argv)
   }

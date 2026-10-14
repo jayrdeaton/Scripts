@@ -119,14 +119,14 @@ export const command = Program.command('apply')
         try {
           existing = await gh(`/repos/${fullName}/rulesets`)
         } catch {
-          // no access / none — treat as empty, the write will surface real errors
+          // no access / none - treat as empty, the write will surface real errors
         }
         const match = existing.find((r) => r.name === body.name)
 
         // Already present and not overwriting → skip.
         if (match && !options.overwrite) {
           skipped++
-          loader.log(`  ${Color.bold(fullName)}  ${Color.faint(`skip — already has "${body.name}"`)}`)
+          loader.log(`  ${Color.bold(fullName)}  ${Color.faint(`skip: already has "${body.name}"`)}`)
           continue
         }
 
@@ -146,7 +146,7 @@ export const command = Program.command('apply')
         } catch (err) {
           failed++
           const reason = (err.stderr || err.message || '').split('\n').find((l) => l.trim()) ?? 'unknown error'
-          loader.log(`  ${Color.bold(fullName)}  ${Color.red(`failed — ${reason.trim()}`)}`, Color.red('✗'))
+          loader.log(`  ${Color.bold(fullName)}  ${Color.red(`failed: ${reason.trim()}`)}`, Color.red('✗'))
         }
       }
     } finally {

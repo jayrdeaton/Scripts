@@ -47,11 +47,11 @@ export const command = Program.command('new')
     }
 
     log.info(`Creating ${displayName}...`)
-    // git archive exports exactly the tracked, committed tree at HEAD — node_modules, .expo, dist,
+    // git archive exports exactly the tracked, committed tree at HEAD - node_modules, .expo, dist,
     // coverage, ios/android build output, and any other .gitignore'd cruft are never in it, so this
     // needs no manual exclude list (and can't drift out of sync with BOILERPLATE_DIR's .gitignore the
     // way a hand-maintained filter would). Also means an uncommitted local edit in BOILERPLATE_DIR
-    // never leaks into a new project — only committed state does.
+    // never leaks into a new project - only committed state does.
     mkdirSync(targetDir, { recursive: true })
     exec(`git archive HEAD | tar -x -C "${targetDir}"`, { cwd: BOILERPLATE_DIR })
 

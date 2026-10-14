@@ -14,17 +14,17 @@ function exec(cmd, opts = {}) {
 }
 
 export const command = Program.command('update-boilerplate')
-  .description('Update Expo boilerplate — clones if absent, updates deps, commits, and pushes')
+  .description('Update Expo boilerplate: clones if absent, updates deps, commits, and pushes')
   .action(async () => {
     if (existsSync(BOILERPLATE_DIR)) {
       // BOILERPLATE_DIR is Jay's real, actively-edited Expo-Starter checkout, not an isolated pull
-      // cache — the final step below stages and pushes EVERYTHING (`git add -A`), so any pre-existing
+      // cache - the final step below stages and pushes EVERYTHING (`git add -A`), so any pre-existing
       // uncommitted work here would get silently swept into an automated "Update dependencies" commit
       // and pushed. Failing fast on a dirty tree keeps that diff scoped to only what this command
       // itself produces (the dependency bump + any lint-fix it makes).
       const dirtyBeforeStart = execSync('git status --porcelain', { cwd: BOILERPLATE_DIR }).toString().trim()
       if (dirtyBeforeStart) {
-        log.fail(`${BOILERPLATE_DIR} has uncommitted changes — commit or stash them first, then re-run.`)
+        log.fail(`${BOILERPLATE_DIR} has uncommitted changes: commit or stash them first, then re-run.`)
         process.exit(1)
       }
 
@@ -41,7 +41,7 @@ export const command = Program.command('update-boilerplate')
     const status = execSync('git status --porcelain', { cwd: BOILERPLATE_DIR }).toString().trim()
 
     if (!status) {
-      log.succeed('Nothing to commit — boilerplate is already up to date.')
+      log.succeed('Nothing to commit: boilerplate is already up to date.')
       return
     }
 

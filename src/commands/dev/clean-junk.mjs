@@ -113,7 +113,7 @@ export const command = Program.command('clean-junk')
         rmSync(item, { recursive: true, force: true })
         deleted++
       } catch (err) {
-        deleteSpinner.log(`  Failed: ${item} — ${err.message}`, Color.red('✗'))
+        deleteSpinner.log(`  Failed: ${item} (${err.message})`, Color.red('✗'))
       }
     }
 

@@ -63,7 +63,7 @@ export const command = Program.command('archive')
     repos = repos.filter(needsWork).sort((a, b) => a.full_name.localeCompare(b.full_name))
 
     if (!repos.length) {
-      spinner.succeed('Nothing to do — no matching repos need changes.')
+      spinner.succeed('Nothing to do, no matching repos need changes.')
       return
     }
 
@@ -108,7 +108,7 @@ export const command = Program.command('archive')
       } catch (err) {
         failed++
         const reason = (err.stderr || err.message || '').split('\n').find((l) => l.trim()) ?? 'unknown error'
-        loader.log(`  ${Color.bold(fullName)}  ${Color.red(`failed — ${reason.trim()}`)}`, Color.red('✗'))
+        loader.log(`  ${Color.bold(fullName)}  ${Color.red(`failed: ${reason.trim()}`)}`, Color.red('✗'))
       }
     }
 

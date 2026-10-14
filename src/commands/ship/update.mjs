@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { Color, log, Program } from 'termkit'
 
 // jrd runs outside `npm run`, so unlike the fleet's old npm-script-based
-// wrappers it never gets npm's automatic node_modules/.bin PATH prepending —
+// wrappers it never gets npm's automatic node_modules/.bin PATH prepending -
 // eas-cli is often installed globally, but this makes a local install win too.
 function withLocalBin(cwd) {
   return { ...process.env, PATH: `${join(cwd, 'node_modules', '.bin')}:${process.env.PATH}` }
@@ -54,7 +54,7 @@ function runVerify(cwd) {
 }
 
 export const command = Program.command('update', '<profile>')
-  .description('Publish an EAS update for the current directory — bumps otaVersion, then eas update --branch/--environment <profile>')
+  .description('Publish an EAS update for the current directory: bumps otaVersion, then eas update --branch/--environment <profile>')
   .option('f', 'file', '[file]', 'Path to release file for the otaVersion bump (default: src/constants/release.ts)')
   .action(async (options) => {
     const cwd = process.cwd()
@@ -64,7 +64,7 @@ export const command = Program.command('update', '<profile>')
     runVerify(cwd)
 
     // Captured before bump-ota's own commit, so this is the app's real last
-    // commit — not the "otaVersion N -> N+1" commit bump-ota is about to make.
+    // commit - not the "otaVersion N -> N+1" commit bump-ota is about to make.
     const message = execSync('git log -1 --pretty=%B', { cwd }).toString().trim()
 
     exec(`jrd ship bump-ota${options.file ? ` --file ${options.file}` : ''}`, cwd)
