@@ -11,13 +11,13 @@ import { Color, log } from 'termkit'
 // wrappers it never gets npm's automatic node_modules/.bin PATH prepending -
 // expo (unlike eas-cli, often installed globally) only resolves locally, and
 // this makes a local eas-cli install win too.
-export function withLocalBin(cwd, extra = {}) {
-  return { ...process.env, ...extra, PATH: `${join(cwd, 'node_modules', '.bin')}:${process.env.PATH}` }
+export function withLocalBin(cwd) {
+  return { ...process.env, PATH: `${join(cwd, 'node_modules', '.bin')}:${process.env.PATH}` }
 }
 
-export function exec(cmd, cwd, extraEnv) {
+export function exec(cmd, cwd) {
   console.log(Color.faint(`$ ${cmd}`))
-  execSync(cmd, { stdio: 'inherit', cwd, env: withLocalBin(cwd, extraEnv) })
+  execSync(cmd, { stdio: 'inherit', cwd, env: withLocalBin(cwd) })
 }
 
 export function validateProfile(profile, cwd) {

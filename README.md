@@ -122,12 +122,13 @@ Run from an app's or package's own directory: `build` and `update` for Expo apps
 
 ### `jrd ship build`
 
-Builds the Expo app in the current directory. `development` builds locally (`expo prebuild --clean`, then `eas build --local`) and moves the artifact to `~/Downloads/Builds/<Name>-<timestamp>.<ext>`; every other profile builds in the EAS cloud (`eas build --profile <profile>`).
-
-**Temporary, until every app is on Expo SDK 58:** a local build of an app on SDK 57 or older, on a Mac whose default Xcode is 27 or newer, uses the newest Xcode 26 in `/Applications` (via `DEVELOPER_DIR`). An app linked against the iOS 27 SDK crashes at launch on iOS 27 without the UIScene life cycle, which SDK 57's native template doesn't set up; one built with Xcode 26 runs fine. A `DEVELOPER_DIR` you set yourself wins, and an app on SDK 58 builds with the default Xcode. With no Xcode 26 installed it warns and builds anyway.
+Builds the Expo app in the current directory. `development` always builds locally, and so does any other profile given `--local`: `expo prebuild --clean`, then `eas build --profile <profile> --local`, and the artifact is moved to `~/Downloads/Builds/<Name>-<timestamp>.<ext>`. Without `--local`, every other profile builds in the EAS cloud (`eas build --profile <profile>`). A local `production` build uses no EAS build; upload it with `eas submit --path <file>` or Transporter.
 
 ```
-jrd ship build <profile>
+jrd ship build <profile> [options]
+
+Options:
+  -l, --local   Build on this Mac instead of the EAS cloud (development always builds locally)
 ```
 
 ### `jrd ship update`
