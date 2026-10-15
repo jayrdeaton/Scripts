@@ -10,7 +10,7 @@ npm install -g @jayrdeaton/scripts
 
 ## Commands
 
-Commands are grouped into namespaces (`gh`, `expo`, `npm`, `dev`); general-purpose utilities live at the top level. Run `jrd help`, or `jrd <namespace> help`, to see the tree.
+Commands are grouped into namespaces (`gh`, `expo`, `ship`, `npm`, `dev`, `data`); general-purpose utilities live at the top level. Run `jrd help`, or `jrd <namespace> help`, to see the tree.
 
 ## `gh` - GitHub
 
@@ -95,17 +95,6 @@ Example: `jrd gh privatize --archived` previews making all your archived repos p
 
 ## `expo` - Expo projects
 
-### `jrd expo bump-ota`
-
-Bumps `otaVersion` in `src/constants/release.ts` and auto-commits the change. Requires a clean working directory.
-
-```
-jrd expo bump-ota [options]
-
-Options:
-  -f, --file <file>   Path to release file (default: src/constants/release.ts)
-```
-
 ### `jrd expo new`
 
 Bootstrap a new Expo project from the boilerplate repo. Clones or updates the boilerplate, copies it to `~/Developer/<Name>`, rewrites `package.json` and `app.json` with the derived name/slug/bundle identifiers, and creates an initial git commit.
@@ -125,6 +114,50 @@ Update the Expo boilerplate repo - clones it if absent, runs `jrd npm update`, l
 
 ```
 jrd expo update-boilerplate
+```
+
+## `ship` - Builds, updates and releases
+
+Run from an app's or package's own directory: `build` and `update` for Expo apps, `release` for npm packages. `build` and `update` run the project's `verify` script first (or `lint`, `test` and `typecheck`, whichever exist), and check `<profile>` against `eas.json`'s build profiles.
+
+### `jrd ship build`
+
+Builds the Expo app in the current directory. `development` builds locally (`expo prebuild --clean`, then `eas build --local`) and moves the artifact to `~/Downloads/Builds/<Name>-<timestamp>.<ext>`; every other profile builds in the EAS cloud (`eas build --profile <profile>`).
+
+**Temporary, until every app is on Expo SDK 58:** a local build of an app on SDK 57 or older, on a Mac whose default Xcode is 27 or newer, uses the newest Xcode 26 in `/Applications` (via `DEVELOPER_DIR`). An app linked against the iOS 27 SDK crashes at launch on iOS 27 without the UIScene life cycle, which SDK 57's native template doesn't set up; one built with Xcode 26 runs fine. A `DEVELOPER_DIR` you set yourself wins, and an app on SDK 58 builds with the default Xcode. With no Xcode 26 installed it warns and builds anyway.
+
+```
+jrd ship build <profile>
+```
+
+### `jrd ship update`
+
+Publishes an EAS update for the app in the current directory: bumps `otaVersion` (`jrd ship bump-ota`), then `eas update --branch <profile> --environment <profile>` with the app's last commit message. Every profile but `development` runs non-interactively.
+
+```
+jrd ship update <profile> [options]
+
+Options:
+  -f, --file <file>   Path to release file for the otaVersion bump (default: src/constants/release.ts)
+```
+
+### `jrd ship bump-ota`
+
+Bumps `otaVersion` in `src/constants/release.ts` and auto-commits the change. Requires a clean working directory.
+
+```
+jrd ship bump-ota [options]
+
+Options:
+  -f, --file <file>   Path to release file (default: src/constants/release.ts)
+```
+
+### `jrd ship release`
+
+`npm version <bump>`, then `git push --follow-tags`.
+
+```
+jrd ship release <bump>     (major, minor, or patch)
 ```
 
 ## `npm` - npm packages
