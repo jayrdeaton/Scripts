@@ -118,7 +118,7 @@ jrd expo update-boilerplate
 
 ## `ship` - Builds, updates and releases
 
-Run from an app's or package's own directory: `build` and `update` for Expo apps, `release` for npm packages. `build` and `update` run the project's `verify` script first (or `lint`, `test` and `typecheck`, whichever exist), and check `<profile>` against `eas.json`'s build profiles.
+Run from an app's or package's own directory: `build` and `update` for Expo apps, `release` for both (an npm package publishes on its tag, an app with a tag-triggered deploy workflow deploys). `build` and `update` run the project's `verify` script first (or `lint`, `test` and `typecheck`, whichever exist), and check `<profile>` against `eas.json`'s build profiles.
 
 ### `jrd ship build`
 
@@ -155,7 +155,9 @@ Options:
 
 ### `jrd ship release`
 
-`npm version <bump>`, then `git push --follow-tags`.
+Bumps the version with `npm version <bump> --no-git-tag-version` (so `preversion`, `version` and `postversion` still run), copies the new version into `app.json`'s `expo.version` when there is one, then commits both as one commit named after the version, adds an annotated `v<version>` tag (npm's `tag-version-prefix` and `message` settings apply) and runs `git push --follow-tags`. Requires a clean working directory.
+
+`expo.version` is the store version, so the git tag, the web deploy and the next store build share one number. It isn't part of the app's fingerprint runtime version, so a release never cuts existing builds off from OTA updates. Only that value in `app.json` is rewritten, found by its place in the JSON (a plugin option named `version`, or the same number elsewhere, is left alone), and the rest of the file keeps its formatting; if it can't be found, nothing is committed.
 
 ```
 jrd ship release <bump>     (major, minor, or patch)
