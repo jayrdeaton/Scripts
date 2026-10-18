@@ -2,7 +2,7 @@ import { execFileSync, execSync } from 'node:child_process'
 
 import { Color, log, Program } from 'termkit'
 
-import { exec, runVerify, validateProfile, withLocalBin } from '../../lib/ship.mjs'
+import { exec, requireCleanTree, runVerify, validateProfile, withLocalBin } from '../../lib/ship.mjs'
 
 export const command = Program.command('update', '<profile>')
   .description('Publish an EAS update for the current directory: bumps otaVersion, then eas update --branch/--environment <profile>')
@@ -12,6 +12,9 @@ export const command = Program.command('update', '<profile>')
     const profile = options.profile
     validateProfile(profile, cwd)
 
+    // bump-ota refuses a dirty tree too, but only after verify has run. Checking first means verify
+    // tests exactly what eas update ships.
+    requireCleanTree(cwd)
     runVerify(cwd)
 
     // Captured before bump-ota's own commit, so this is the app's real last

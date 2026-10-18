@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 import { log, Program } from 'termkit'
 
-import { exec } from '../../lib/ship.mjs'
+import { checkLockfile, exec, requireCleanTree, runVerify } from '../../lib/ship.mjs'
 
 const BUMPS = ['major', 'minor', 'patch']
 
@@ -87,10 +87,14 @@ export const command = Program.command('release', '<bump>')
     }
 
     // npm version checks this itself, but it no longer commits here (see below).
-    if (execSync('git status --porcelain', { cwd }).toString().trim()) {
-      log.fail('Working directory is not clean. Commit or stash changes first.')
-      process.exit(1)
-    }
+    requireCleanTree(cwd)
+
+    // The push sets off CI (npm ci, then npm run verify), so both run here first and a failure stops
+    // before anything is bumped. A preversion script that already runs verify covers that half, since
+    // npm version runs it before changing anything.
+    const { scripts = {} } = JSON.parse(readFileSync(join(cwd, 'package.json'), 'utf8'))
+    if (/\bnpm run verify\b/.test(scripts.preversion ?? '')) checkLockfile(cwd)
+    else runVerify(cwd)
 
     // Bumps package.json (and the lockfile) and runs the preversion/version/postversion scripts, but
     // leaves the commit and tag to us, so app.json can go in the same commit.

@@ -37,7 +37,41 @@ export function validateProfile(profile, cwd) {
   }
 }
 
+export function requireCleanTree(cwd) {
+  if (execSync('git status --porcelain', { cwd }).toString().trim()) {
+    log.fail('Working directory is not clean. Commit or stash changes first.')
+    process.exit(1)
+  }
+}
+
+// CI (infinitetoken/Workflows npm-ci.yml), EAS cloud builds and the tag deploys all start with
+// npm ci, which refuses a package-lock.json that's out of sync with package.json. --dry-run checks
+// just that, in a second or two, without touching node_modules.
+export function checkLockfile(cwd) {
+  if (!existsSync(join(cwd, 'package-lock.json'))) return
+
+  const cmd = 'npm ci --dry-run --ignore-scripts'
+  console.log(Color.faint(`$ ${cmd}`))
+  try {
+    execSync(cmd, { cwd, stdio: 'pipe', env: withLocalBin(cwd) })
+  } catch (err) {
+    const stderr = err.stderr?.toString() ?? ''
+    // npm's "Missing: x from lock file" / "Invalid: lock file's x does not satisfy y" lines.
+    const drift = stderr.split('\n').filter((line) => /^npm error (Missing|Invalid):/.test(line))
+    if (drift.length === 0) {
+      console.error(stderr.trim())
+      log.fail(`${cmd} failed.`)
+      process.exit(1)
+    }
+    console.error(drift.map((line) => line.replace(/^npm error /, '  ')).join('\n'))
+    log.fail('package-lock.json is out of sync with package.json, so npm ci in CI would fail. Run npm install and commit the lockfile.')
+    process.exit(1)
+  }
+}
+
 export function runVerify(cwd) {
+  checkLockfile(cwd)
+
   const pkg = JSON.parse(readFileSync(join(cwd, 'package.json'), 'utf8'))
   const scripts = pkg.scripts ?? {}
 
