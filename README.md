@@ -118,7 +118,7 @@ jrd expo update-boilerplate
 
 ## `ship` - Builds, updates and releases
 
-Run from an app's or package's own directory: `build` and `update` for Expo apps, `release` for both (an npm package publishes on its tag, an app with a tag-triggered deploy workflow deploys). All three run what CI runs before anything ships: `npm ci --dry-run` (so an out-of-sync `package-lock.json` is caught locally), then the project's `verify` script (or `lint`, `test` and `typecheck`, whichever exist). `release` does this before bumping, so a failure leaves nothing committed or pushed, and leaves `verify` to a `preversion` script that already runs it. `update` and `release` require a clean working directory up front. `build` and `update` check `<profile>` against `eas.json`'s build profiles.
+Run from an app's or package's own directory: `build` and `update` for Expo apps, `release` for both (an npm package publishes on its tag, an app with a tag-triggered deploy workflow deploys). All three run what CI runs before anything ships: `npm ci --dry-run` (so an out-of-sync `package-lock.json` is caught locally), then the project's `verify` script (or `lint`, `test` and `typecheck`, whichever exist). `release` does this before bumping, so a failure leaves nothing committed or pushed, and also runs `vercel.json`'s `buildCommand` when there is one (an Expo app's `expo export -p web`), since that's what the tag's web deploy builds. It skips a step something else already runs: `verify` in a `preversion` script or at the start of a `build:web`, or a web build that `verify` already includes. `update` and `release` require a clean working directory up front. `build` and `update` check `<profile>` against `eas.json`'s build profiles.
 
 ### `jrd ship build`
 

@@ -75,6 +75,24 @@ function syncAppJsonVersion(cwd, version) {
   return true
 }
 
+// The tag's web deploy (vercel build) runs vercel.json's buildCommand, which in an Expo app is a web
+// export that verify never touches. Null when there's none.
+function webBuildCommand(cwd) {
+  const path = join(cwd, 'vercel.json')
+  if (!existsSync(path)) return null
+  return JSON.parse(readFileSync(path, 'utf8')).buildCommand ?? null
+}
+
+// Whether cmd chains step with &&, either itself or, when cmd is a bare `npm run <name>`, in that
+// script, so a step one command already runs isn't run twice.
+function runsStep(cmd, step, scripts) {
+  if (!cmd) return false
+  const parts = (c) => c.split('&&').map((part) => part.trim())
+  if (parts(cmd).includes(step)) return true
+  const script = cmd.match(/^npm run (\S+)$/)?.[1]
+  return Boolean(script && scripts[script] && parts(scripts[script]).includes(step))
+}
+
 export const command = Program.command('release', '<bump>')
   .description('Bump the version (and app.json expo.version), commit, tag and git push --follow-tags (bump is major, minor, or patch)')
   .action(async (options) => {
@@ -89,12 +107,19 @@ export const command = Program.command('release', '<bump>')
     // npm version checks this itself, but it no longer commits here (see below).
     requireCleanTree(cwd)
 
-    // The push sets off CI (npm ci, then npm run verify), so both run here first and a failure stops
-    // before anything is bumped. A preversion script that already runs verify covers that half, since
-    // npm version runs it before changing anything.
+    // Everything the push sets off runs here first, so a failure stops before anything is bumped: CI
+    // (npm ci, then npm run verify) and the web deploy's build. Verify is left to whichever of those
+    // already runs it: a preversion script (npm version runs it before changing anything) or a web
+    // build like build:web's "npm run verify && expo export". A verify that already includes the web
+    // build (a Nuxt site's "npm run build") covers that too.
     const { scripts = {} } = JSON.parse(readFileSync(join(cwd, 'package.json'), 'utf8'))
-    if (/\bnpm run verify\b/.test(scripts.preversion ?? '')) checkLockfile(cwd)
-    else runVerify(cwd)
+    const webBuild = webBuildCommand(cwd)
+    if (runsStep(scripts.preversion, 'npm run verify', scripts) || runsStep(webBuild, 'npm run verify', scripts)) {
+      checkLockfile(cwd)
+    } else {
+      runVerify(cwd)
+    }
+    if (webBuild && !runsStep(scripts.verify, webBuild, scripts)) exec(webBuild, cwd)
 
     // Bumps package.json (and the lockfile) and runs the preversion/version/postversion scripts, but
     // leaves the commit and tag to us, so app.json can go in the same commit.
