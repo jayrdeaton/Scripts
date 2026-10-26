@@ -16,9 +16,10 @@ export function withLocalBin(cwd) {
   return { ...process.env, PATH: `${join(cwd, 'node_modules', '.bin')}:${process.env.PATH}` }
 }
 
-export function exec(cmd, cwd) {
+// env adds to the command's environment without being echoed (signing passwords)
+export function exec(cmd, cwd, env) {
   console.log(Color.faint(`$ ${cmd}`))
-  execSync(cmd, { stdio: 'inherit', cwd, env: withLocalBin(cwd) })
+  execSync(cmd, { stdio: 'inherit', cwd, env: { ...withLocalBin(cwd), ...env } })
 }
 
 export function validateProfile(profile, cwd) {

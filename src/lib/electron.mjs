@@ -1,5 +1,6 @@
 import { execFileSync, execSync, spawnSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { join, relative, resolve } from 'node:path'
 
 import { Color, log } from 'termkit'
@@ -52,7 +53,32 @@ const identities = (policy) => run('security', ['find-identity', '-v', ...(polic
 
 const MAKE_CERTIFICATE = 'Make one in Xcode: Settings, Accounts, Manage Certificates.'
 
-// Before a long build: the certificates and profile the target signs with
+// The Mac App Store certificates are .p12 files here, not in the login keychain: there, Xcode takes the Apple
+// Distribution one for an iPhone build's generic "iPhone Distribution" identity, and `eas build --local` fails
+// because EAS's profile doesn't include it. electron-builder imports the files (CSC_LINK, CSC_INSTALLER_LINK) into
+// a keychain of its own for the build and deletes it after. Both share one password, kept in the login keychain.
+export const SIGNING_DIR = join(homedir(), '.config', 'jrd', 'signing')
+const SIGNING_SERVICE = 'jrd Mac App Store signing'
+const SIGNING_FILES = [
+  { file: 'apple-distribution.p12', name: 'Apple Distribution', types: ['Apple Distribution', '3rd Party Mac Developer Application'], link: 'CSC_LINK', passwordEnv: 'CSC_KEY_PASSWORD' },
+  { file: 'mac-installer-distribution.p12', name: 'Mac Installer Distribution', types: ['3rd Party Mac Developer Installer'], link: 'CSC_INSTALLER_LINK', passwordEnv: 'CSC_INSTALLER_KEY_PASSWORD' }
+]
+const shown = (path) => path.replace(homedir(), '~')
+
+const signingPassword = () => {
+  const { status, stdout } = spawnSync('security', ['find-generic-password', '-s', SIGNING_SERVICE, '-w'])
+  return status === 0 ? stdout.toString().replace(/\n$/, '') : null
+}
+
+// A .p12's certificate names and whether it holds a key, or null if the password doesn't open it. macOS's own
+// LibreSSL: Keychain Access exports certificates with RC2, which OpenSSL 3 won't read without -legacy.
+function readP12(path, password) {
+  const { status, stdout, stderr } = spawnSync('/usr/bin/openssl', ['pkcs12', '-in', path, '-info', '-nokeys', '-passin', 'env:JRD_P12_PASSWORD'], { env: { ...process.env, JRD_P12_PASSWORD: password } })
+  return status === 0 ? { names: stdout.toString(), hasKey: stderr.toString().includes('Shrouded Keybag') } : null
+}
+
+// Before a long build: the certificates and profile the target signs with. Returns the environment that hands
+// electron-builder the Mac App Store certificates.
 export function checkSigning(cwd, config, profile) {
   if (profile === 'mas-dev') {
     const qualifier = configValue(config, 'identity', 'masDev') ?? ''
@@ -60,15 +86,25 @@ export function checkSigning(cwd, config, profile) {
       .split('\n')
       .some((line) => /"(Apple Development|Mac Developer):/.test(line) && line.includes(qualifier))
     if (!found) fail(`No Apple Development certificate in the keychain. ${MAKE_CERTIFICATE}`)
-    return
+    return {}
   }
   const identity = configValue(config, 'identity', 'mas')
   const profileFile = configValue(config, 'provisioningProfile', 'mas')
   if (!identity) fail(`${CONFIG} names no mas.identity (the team's certificate name, like "Infinite Token LLC (6J8NCZC8G6)").`)
   if (!profileFile || !existsSync(join(cwd, profileFile))) fail(`The Mac App Store provisioning profile ${profileFile ?? '(mas.provisioningProfile)'} isn't here. Make one in the developer portal (Profiles, Mac App Store Connect) and save it there.`)
-  const signing = identities('codesigning')
-  if (!signing.includes(`Apple Distribution: ${identity}`) && !signing.includes(`3rd Party Mac Developer Application: ${identity}`)) fail(`No Apple Distribution certificate for ${identity} in the keychain. ${MAKE_CERTIFICATE}`)
-  if (!identities().includes(`3rd Party Mac Developer Installer: ${identity}`)) fail(`No Mac Installer Distribution certificate for ${identity} in the keychain. ${MAKE_CERTIFICATE}`)
+  const password = signingPassword()
+  if (!password) fail(`No "${SIGNING_SERVICE}" password in the keychain. Add the .p12 files' password (it asks for it): security add-generic-password -a "$USER" -s "${SIGNING_SERVICE}" -w`)
+  const env = {}
+  for (const { file, name, types, link, passwordEnv } of SIGNING_FILES) {
+    const path = join(SIGNING_DIR, file)
+    if (!existsSync(path)) fail(`No ${shown(path)}. Export the ${name} certificate for ${identity} from Keychain Access's My Certificates as a .p12 and save it there. ${MAKE_CERTIFICATE}`)
+    const p12 = readP12(path, password)
+    if (!p12) fail(`${shown(path)} doesn't open with the "${SIGNING_SERVICE}" password.`)
+    if (!p12.hasKey || !types.some((type) => p12.names.includes(`${type}: ${identity}`))) fail(`${shown(path)} holds no ${name} certificate and key for ${identity}.`)
+    env[link] = path
+    env[passwordEnv] = password
+  }
+  return env
 }
 
 const newest = (paths) => paths.sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0] ?? null
@@ -153,10 +189,8 @@ export function buildElectron(cwd, profile) {
   checkLockfile(cwd)
   if (scripts.verify) exec('npm run verify', cwd)
   if (web) runVerify(web)
-  if (profile !== 'development') {
-    checkSigning(cwd, config, profile)
-    log.info(`Signing asks the keychain for the ${store ? 'Apple Distribution and Mac Installer Distribution keys' : 'Apple Development key'}. If macOS prompts, Allow covers one file, Always Allow the rest of this build and later ones.`)
-  }
+  const signingEnv = profile === 'development' ? {} : checkSigning(cwd, config, profile)
+  if (profile === 'mas-dev') log.info('Signing asks the keychain for the Apple Development key. If macOS prompts, Allow covers one file, Always Allow the rest of this build and later ones.')
 
   // The build number App Store Connect takes once per version: raised for the build, and committed only once
   // the package passes its checks, so a failed build leaves nothing behind
@@ -169,7 +203,7 @@ export function buildElectron(cwd, profile) {
 
   let dir, app, pkg, problems
   try {
-    exec(`npm run ${script}`, cwd)
+    exec(`npm run ${script}`, cwd, signingEnv)
     dir = buildFolder(outDir, profile, productName)
     if (!dir) throw new Error(`Found no ${productName}.app for ${profile} in ${relative(cwd, outDir)}.`)
     app = join(dir, `${productName}.app`)
