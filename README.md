@@ -122,7 +122,7 @@ Run from an app's or package's own directory: `build` and `update` for Expo apps
 
 ### `jrd ship build`
 
-Builds the Expo app in the current directory. `development` always builds locally, and so does any other profile given `--local`: `expo prebuild --clean`, then `eas build --profile <profile> --local`, and the artifact is moved to `~/Downloads/Builds/<Name>-<timestamp>.<ext>`. Without `--local`, every other profile builds in the EAS cloud (`eas build --profile <profile>`). A local `production` build uses no EAS build; upload it with `eas submit --path <file>` or Transporter.
+Builds the Expo app in the current directory. `development` always builds locally, and so does any other profile given `--local`: `expo prebuild --clean`, then `eas build --profile <profile> --local`, and the artifact is moved to `~/Downloads/Builds/<Name>-<timestamp>.<ext>`. Without `--local`, every other profile builds in the EAS cloud (`eas build --profile <profile>`). A local `production` build uses no EAS build; upload it with `eas submit --path <file>` or Transporter. Each local `.ipa` is also recorded in `~/.config/jrd/builds.json` (version, build number, native fingerprint, commit), which outlives the `.ipa` once it's installed and deleted, so `jrd ship status` can tell which build a phone has.
 
 ```
 jrd ship build <profile> [options]
@@ -161,6 +161,26 @@ Bumps the version with `npm version <bump> --no-git-tag-version` (so `preversion
 
 ```
 jrd ship release <bump>     (major, minor, or patch)
+```
+
+### `jrd ship status`
+
+Read-only. Shows where each Expo app stands, everything measured against the local checkout:
+
+- **Web:** the newest Vercel production deployment (`vercel ls --prod`), the tag it was built from, and the last run of the tag-triggered Deploy workflow, so a failed deploy shows up.
+- **Builds:** the newest iOS build per EAS profile, whichever is newer: an EAS build or a local build from `jrd ship build` (its record, or an `.ipa` in `~/Downloads/Builds` from before it kept records).
+- **Installs:** the app on each booted simulator, and on each connected iPhone or iPad (`devicectl`, over cable or Wi-Fi). A phone's install can't be read directly, so its version and build number are matched to an EAS build or a local build record. Build numbers come from one EAS counter shared by every profile, so the pair identifies the build. A phone build with neither shows as having no build record.
+- **Updates:** the newest iOS EAS update on the `production` branch, and on `development` when there's a dev build for it to reach.
+
+Every build is compared to the checkout's iOS fingerprint (`eas fingerprint:generate`, which includes uncommitted changes). The fingerprint is the runtime version an update has to match. A build whose fingerprint matches can get the current code as an update. One that doesn't needs a new build. Each update row also says whether its runtime matches the newest build on its channel. Commit counts skip commits that only touch `src/constants/release.ts`, since an otaVersion bump on its own leaves nothing new to ship. Each app ends with what to run next, for example `jrd ship update production` when only JS changed since the last update, `jrd ship build production` when native code changed, or installing a local `.ipa` that matches the code on a phone running an older build. A source that fails or times out (eas, vercel, devicectl) is named under its app instead of reading as empty.
+
+Dirs resolve against `~/Developer`. With none, it checks the current directory if it's an Expo app (`app.json` and `eas.json`). Otherwise it checks every Expo app under `~/Developer` that has a `v*` tag. Several apps are checked at once, each printed as soon as it and the ones before it are done (about 30 seconds for eight). iOS only. App Store review state isn't visible to it.
+
+```
+jrd ship status [dirs...] [options]
+
+Options:
+  -j, --json   Print the gathered data as JSON instead of the report
 ```
 
 ## `npm` - npm packages

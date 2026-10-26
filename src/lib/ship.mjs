@@ -1,6 +1,7 @@
-import { execSync } from 'node:child_process'
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { execFileSync, execSync } from 'node:child_process'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { dirname, join } from 'node:path'
 
 import { Color, log } from 'termkit'
 
@@ -89,4 +90,62 @@ export function runVerify(cwd) {
     }
     exec(`npm run ${name}`, cwd)
   }
+}
+
+// Where `jrd ship build` leaves local build artifacts, and its record of each one. An artifact usually
+// gets deleted once it's installed; the record outlives it, so `jrd ship status` can still tell which
+// build a phone has and what native code is in it.
+export const BUILDS_DIR = join(homedir(), 'Downloads', 'Builds')
+export const BUILD_LOG = join(homedir(), '.config', 'jrd', 'builds.json')
+
+export function readBuildLog() {
+  try {
+    return JSON.parse(readFileSync(BUILD_LOG, 'utf8'))
+  } catch {
+    return []
+  }
+}
+
+export function recordBuild(entry) {
+  mkdirSync(dirname(BUILD_LOG), { recursive: true })
+  writeFileSync(BUILD_LOG, `${JSON.stringify([...readBuildLog(), entry], null, 2)}\n`)
+}
+
+// What an iOS app bundle says about itself: version, build number, the update channel (its EAS
+// profile's) and the native fingerprint expo-updates embedded at build time. readEntry(path) returns
+// a file inside the .app as a Buffer, or null.
+export function appBundleInfo(readEntry) {
+  const plist = (entry) => {
+    const data = readEntry(entry)
+    if (!data?.length) return {}
+    try {
+      return JSON.parse(execFileSync('plutil', ['-convert', 'json', '-o', '-', '-'], { input: data, stdio: ['pipe', 'pipe', 'ignore'] }).toString())
+    } catch {
+      return {}
+    }
+  }
+  const info = plist('Info.plist')
+  return {
+    version: info.CFBundleShortVersionString,
+    build: info.CFBundleVersion,
+    channel: plist('Expo.plist').EXUpdatesRequestHeaders?.['expo-channel-name'],
+    fingerprint: readEntry('EXUpdates.bundle/fingerprint')?.toString().trim() || null
+  }
+}
+
+// appBundleInfo for an .ipa, or null when it isn't one.
+export function ipaInfo(path) {
+  const unzip = (...args) => {
+    try {
+      return execFileSync('unzip', args, { stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 256 * 1024 * 1024 })
+    } catch {
+      return null
+    }
+  }
+  // macOS's unzip has no -W, so a Payload/*.app/ pattern would also match an embedded app's files:
+  // find the app's own folder first.
+  const app = unzip('-Z1', path)
+    ?.toString()
+    .match(/^Payload\/[^/]+\.app\//m)?.[0]
+  return app ? appBundleInfo((entry) => unzip('-p', path, app + entry)) : null
 }
