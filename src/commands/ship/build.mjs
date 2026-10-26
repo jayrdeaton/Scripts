@@ -4,19 +4,19 @@ import { join } from 'node:path'
 
 import { log, Program } from 'termkit'
 
-import { BUILDS_DIR, exec, ipaInfo, recordBuild, runVerify, validateProfile } from '../../lib/ship.mjs'
-
-function formatTimestamp(date) {
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}`
-}
+import { buildElectron, isElectronProject } from '../../lib/electron.mjs'
+import { BUILDS_DIR, exec, formatTimestamp, ipaInfo, recordBuild, runVerify, validateProfile } from '../../lib/ship.mjs'
 
 export const command = Program.command('build', '<profile>')
-  .description('Build an Expo app in the current directory: development (or any profile with --local) builds locally and moves the artifact to ~/Downloads/Builds, other profiles build in the EAS cloud')
-  .option('l', 'local', null, 'Build on this Mac instead of the EAS cloud (development always builds locally)')
+  .description('Build the app in the current directory. Expo: development (or any profile with --local) builds locally and moves the artifact to ~/Downloads/Builds, other profiles build in the EAS cloud. Electron (an electron-builder.yml): development, mas-dev or mas, the last checked, saved to ~/Downloads/Builds and opened in Transporter')
+  .option('l', 'local', null, 'Build on this Mac instead of the EAS cloud (development always builds locally; Expo only)')
   .action(async (options) => {
     const cwd = process.cwd()
     const profile = options.profile
+    if (isElectronProject(cwd)) {
+      buildElectron(cwd, profile)
+      return
+    }
     validateProfile(profile, cwd)
 
     runVerify(cwd)

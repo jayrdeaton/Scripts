@@ -98,6 +98,12 @@ export function runVerify(cwd) {
 export const BUILDS_DIR = join(homedir(), 'Downloads', 'Builds')
 export const BUILD_LOG = join(homedir(), '.config', 'jrd', 'builds.json')
 
+// A build artifact's name stamp, 2026-10-26_08-15-00
+export function formatTimestamp(date) {
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}_${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}`
+}
+
 export function readBuildLog() {
   try {
     return JSON.parse(readFileSync(BUILD_LOG, 'utf8'))

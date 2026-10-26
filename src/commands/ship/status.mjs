@@ -141,7 +141,8 @@ async function easBuilds(dir) {
 // Every local build `jrd ship build` made: its records (kept after an .ipa is installed and deleted),
 // plus any .ipa in ~/Downloads/Builds from before it kept them.
 function localBuilds(name, bundleId) {
-  const records = readBuildLog().filter((r) => (bundleId ? r.bundleId === bundleId : r.app === name))
+  // Without the Mac App Store builds an Electron app records, which can share the iPhone app's bundle id
+  const records = readBuildLog().filter((r) => r.platform !== 'macos' && (bundleId ? r.bundleId === bundleId : r.app === name))
   const fromLog = records.map((r) => ({ ...r, source: existsSync(r.file) ? `local ${basename(r.file)}` : 'local' }))
 
   const files = existsSync(BUILDS_DIR) ? readdirSync(BUILDS_DIR).filter((file) => file.startsWith(`${name}-`) && file.endsWith('.ipa')) : []
