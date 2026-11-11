@@ -34,7 +34,7 @@ function checkEncryption(cwd, before) {
 }
 
 export const command = Program.command('build', '<profile>')
-  .description('Build the app in the current directory. Expo: development (or any profile with --local) builds locally and moves the artifact to ~/Downloads/Builds, other profiles build in the EAS cloud. Electron (an electron-builder.yml): development, mas-dev or mas (Mac App Store: mas-dev to run sandboxed here, mas to upload), each checked once built, mas then saved to ~/Downloads/Builds and opened in Transporter')
+  .description('Build the app in the current directory. Expo: development (or any profile with --local) builds locally and moves the artifact to ~/Downloads/Builds, other profiles build in the EAS cloud. Electron (an electron-builder.yml): development, mas-dev or mas (Mac App Store: mas-dev to run sandboxed here, mas to upload), or direct (the direct download, signed with Developer ID and notarized), each checked once built, mas then saved to ~/Downloads/Builds and opened in Transporter, direct saved there as a DMG')
   .option('l', 'local', null, 'Build on this Mac instead of the EAS cloud (development always builds locally; Expo only)')
   .action(async (options) => {
     const cwd = process.cwd()

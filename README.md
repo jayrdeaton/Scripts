@@ -118,7 +118,7 @@ jrd expo update-boilerplate
 
 ## `ship` - Builds, updates and releases
 
-Run from an app's or package's own directory: `build` for Expo and Electron apps, `update` for Expo apps, `release` for both (an npm package publishes on its tag, an app with a tag-triggered deploy workflow deploys). All three run what CI runs before anything ships: `npm ci --dry-run` (so an out-of-sync `package-lock.json` is caught locally), then the project's `verify` script (or `lint`, `test` and `typecheck`, whichever exist). `release` does this before bumping, so a failure leaves nothing committed or pushed, and also runs `vercel.json`'s `buildCommand` when there is one (an Expo app's `expo export -p web`), since that's what the tag's web deploy builds. It skips a step something else already runs: `verify` in a `preversion` script or at the start of a `build:web`, or a web build that `verify` already includes. `update` and `release` require a clean working directory up front. `build` and `update` check `<profile>` against `eas.json`'s build profiles.
+Run from an app's or package's own directory: `build` for Expo and Electron apps, `update` for Expo apps, `release` for both (an npm package publishes on its tag, an app with a tag-triggered deploy workflow deploys), `draft` and `publish` for an Electron app's direct downloads. All three run what CI runs before anything ships: `npm ci --dry-run` (so an out-of-sync `package-lock.json` is caught locally), then the project's `verify` script (or `lint`, `test` and `typecheck`, whichever exist). `release` does this before bumping, so a failure leaves nothing committed or pushed, and also runs `vercel.json`'s `buildCommand` when there is one (an Expo app's `expo export -p web`), since that's what the tag's web deploy builds. It skips a step something else already runs: `verify` in a `preversion` script or at the start of a `build:web`, or a web build that `verify` already includes. `update` and `release` require a clean working directory up front. `build` and `update` check `<profile>` against `eas.json`'s build profiles.
 
 ### `jrd ship build`
 
@@ -130,11 +130,51 @@ An Electron app (a directory with an `electron-builder.yml`, like Lumber-Desktop
 
 `mas` signs from `.p12` files, not the login keychain. An Apple Distribution certificate in the login keychain breaks every Expo app's `eas build --local` for iOS: EAS asks Xcode for the generic `iPhone Distribution` identity, Xcode takes the Apple Distribution certificate for it, and EAS's provisioning profile doesn't include that one. Set up once: in Keychain Access (login, My Certificates), export the Apple Distribution and Mac Installer Distribution (3rd Party Mac Developer Installer) certificates as Personal Information Exchange (.p12) with one password, save them as `~/.config/jrd/signing/apple-distribution.p12` and `~/.config/jrd/signing/mac-installer-distribution.p12`, delete the Apple Distribution certificate from the login keychain, and add the password with `security add-generic-password -a "$USER" -s "jrd Mac App Store signing" -w` (it asks for it). `mas` checks that both files open with that password and hold their certificate and key, then hands them to electron-builder (`CSC_LINK`, `CSC_INSTALLER_LINK` and their passwords), which signs from a keychain of its own and deletes it after the build, so nothing asks for keychain access. Run without jrd, `npm run pack:mas` needs those four variables set.
 
+`direct` is the direct download (SlingScan-Desktop), for an app that can't be sandboxed for the Mac App Store: `npm run dist`, a DMG and zip signed with the team's Developer ID Application certificate, with hardened runtime, then notarized and stapled. A Developer ID certificate is the team's, not one app's, so the same one signs any app's direct download. It's a `.p12` like the others, `~/.config/jrd/signing/developer-id-application.p12` under the same password, and only the Account Holder can make one (developer.apple.com, Certificates, Developer ID, Developer ID Application, G2 Sub-CA, from a certificate signing request made in Keychain Access, or Xcode's Manage Certificates, which only offers it to the Account Holder). Notarizing uses an App Store Connect API key saved in notarytool's `jrd-notarization` profile (a Team Key with Developer access, then `xcrun notarytool store-credentials jrd-notarization --key <AuthKey_ID.p8> --key-id <ID> --issuer <Issuer ID>`), which `direct` tries with Apple before building, since electron-builder only warns and skips notarizing without it, and hands to electron-builder as `APPLE_KEYCHAIN_PROFILE`. The app's `electron-builder.yml` names the team's identity in `mac`, so `pack` overrides it back to ad hoc on its command line. After the build, `direct` checks the Developer ID signer and team, hardened runtime, the stapled ticket and Gatekeeper's verdict (`spctl`, "Notarized Developer ID"), then the same for the app inside the DMG and inside the zip (what electron-updater installs), needs a clean tree like `mas`, saves the DMG to `~/Downloads/Builds/<Name>-<timestamp>.dmg` and records it in `builds.json`. Releasing it is `jrd ship draft`'s job, which runs this build itself.
+
 ```
 jrd ship build <profile> [options]
 
 Options:
   -l, --local   Build on this Mac instead of the EAS cloud (development always builds locally; Expo only)
+```
+
+### `jrd ship draft`
+
+Releases an Electron app's direct downloads in one command, for Lumber-Desktop (the Mac, Linux and the Microsoft Store packages) and SlingScan-Desktop (the Mac alone, having no Build workflow): run `jrd ship draft` in the app's directory (Lumber-Desktop) once `package.json`'s `version` is raised and both repos are pushed. It builds and checks everything, makes a draft, shows it, and publishes it on a yes. The release goes in the repo `electron-builder.yml`'s `publish` block names (`infinitetoken/Lumber-Releases`), tagged `v<version>` and titled as the latest release is with the new version in it (`Lumber 1.2.0`, `SlingScan for Mac 1.0.4`; `<productName> <version>` for a first release), which is where electron-updater looks and the download links (`releases/latest/download/<name>`) point.
+
+1. Stops before anything is built when `v<version>` is already released, the version isn't newer than the latest release (no copy would update to it), there's already a draft for it (unless `--replace`), or either tree is dirty (the app's and the web app its `export` script bundles, `../Lumber`).
+2. When the app has a `.github/workflows/build.yml` run by hand (Lumber-Desktop's Build, which makes Linux's AppImages and debs and the Microsoft Store packages on GitHub's runners), it starts it on the current branch, giving its input (`lumber_ref`) the web app's full HEAD SHA. The workflow builds the branch as GitHub has it, so the branch has to be exactly what's pushed, and the web app's HEAD has to be pushed, or draft says to push first (it never pushes). A run already building or built for the same two commits, with its artifacts still kept, is used instead of a new one, so running draft again after a failed Mac build doesn't build the rest again.
+3. Builds the Mac's DMG and zip meanwhile, as `jrd ship build direct` does (verify in both repos, signed, notarized, stapled, checked).
+4. Waits for the workflow (offering to rerun its failed jobs if it fails) and downloads its artifacts into `out/release/`. A Microsoft Store package (`.appx`) is saved to `~/Downloads/Builds/<Name>-<timestamp>-<arch>.appx`, for uploading in Partner Center by hand. An artifact with update feeds (`latest-linux.yml`, `latest-linux-arm64.yml`) joins the release.
+5. Checks every file that will go up: each feed (`latest-mac.yml` and the workflow's) is for this version and lists files whose sha512 and size match it (what electron-updater checks after downloading), the Mac's are from this build, the downloads people get by hand (`.dmg`, `.AppImage`, `.deb`) carry no version in their names, and every name the latest release has without its version is there again, so no download link breaks. The files are each feed, the files it lists and their blockmaps (Lumber's are the eleven of v1.1.0).
+6. Creates the draft with every file and checks what GitHub stored against what was built: every name, size and sha256 (GitHub's digest). A draft isn't in `releases.atom`, so no copy sees it.
+7. Shows the draft (its link, notes and files) and asks whether to publish it, doing what `jrd ship publish` does on a yes. On a no, or with no terminal to ask in, it stays a draft for `jrd ship publish`.
+
+The notes write themselves: this version's What's New from the app's `store/README.md` or else its `README.md` (a `**What's New** (1.2.0):` line over a fenced block: Lumber-Desktop's Mac App Store text, whose `•` lines become bullets, or a paragraph of prose, kept as it is), then a Downloads list linking each platform's files on this release (the Mac's DMG with its chip, the debs and AppImages by architecture). Without a What's New for the version, draft says so before it builds, so it can be written and committed meanwhile, and the notes list only the downloads. `--notes` or `--notes-file` replaces them.
+
+`--dry-run` does everything but the release: it starts the workflow and makes the notarized Mac build, then lists the files and notes it would upload.
+
+```
+jrd ship draft [options]
+
+Options:
+  -n, --notes <notes>      The release notes (Markdown), in place of the ones it writes
+  -F, --notes-file <file>  Read the release notes from a file
+  -t, --title <title>      The release title (default: the latest release's with this version)
+  -r, --replace            Delete the draft already made for this version, once the new files are built and checked
+  -d, --dry-run            Build and check everything, but make no release
+```
+
+### `jrd ship publish`
+
+Publishes the draft `draft` made for `package.json`'s version and wasn't told to publish, in the app's directory: for publishing later, since `draft` asks at its end. It checks the draft once more (its feeds against its files' sizes, the version newer than the latest release, the fixed names), shows its title, notes and files, and asks before publishing; with no terminal to ask in it refuses unless given `--yes`. Then it publishes the draft as the latest release and follows every fixed-name link (`releases/latest/download/<name>`) to its file, failing if one doesn't lead to this release's copy yet.
+
+```
+jrd ship publish [options]
+
+Options:
+  -y, --yes   Publish without asking (only once you've checked the draft)
 ```
 
 ### `jrd ship update`

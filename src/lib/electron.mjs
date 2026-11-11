@@ -1,5 +1,5 @@
 import { execFileSync, execSync, spawnSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, relative, resolve } from 'node:path'
 
@@ -12,7 +12,9 @@ import { BUILDS_DIR, checkLockfile, exec, formatTimestamp, recordBuild, requireC
 //   development  npm run pack          an unsigned local build to run on this Mac
 //   mas-dev      npm run pack:mas-dev  the Mac App Store build, development signed, to run sandboxed here
 //   mas          npm run pack:mas      the Mac App Store build for upload, a .pkg handed to Transporter
-export const ELECTRON_PROFILES = { development: 'pack', 'mas-dev': 'pack:mas-dev', mas: 'pack:mas' }
+//   direct       npm run dist          the direct download (SlingScan-Desktop), a DMG and zip signed with Developer ID
+//                                      and notarized
+export const ELECTRON_PROFILES = { development: 'pack', 'mas-dev': 'pack:mas-dev', mas: 'pack:mas', direct: 'dist' }
 
 const CONFIG = 'electron-builder.yml'
 
@@ -44,7 +46,7 @@ export function configValue(source, key, block) {
 
 // The web app the export script bundles (`cd ../Lumber && npx expo export ...`), whose working tree ends up
 // in the build, so it has to be checked and recorded like the shell's own
-function webSource(cwd, scripts) {
+export function webSource(cwd, scripts) {
   const dir = scripts.export?.match(/^cd\s+(\S+)\s*&&/)?.[1]
   return dir ? resolve(cwd, dir) : null
 }
@@ -53,16 +55,24 @@ const identities = (policy) => run('security', ['find-identity', '-v', ...(polic
 
 const MAKE_CERTIFICATE = 'Make one in Xcode: Settings, Accounts, Manage Certificates.'
 
-// The Mac App Store certificates are .p12 files here, not in the login keychain: there, Xcode takes the Apple
+// The release certificates are .p12 files here, not in the login keychain: there, Xcode takes the Apple
 // Distribution one for an iPhone build's generic "iPhone Distribution" identity, and `eas build --local` fails
 // because EAS's profile doesn't include it. electron-builder imports the files (CSC_LINK, CSC_INSTALLER_LINK) into
-// a keychain of its own for the build and deletes it after. Both share one password, kept in the login keychain.
+// a keychain of its own for the build and deletes it after, so nothing asks for keychain access. They all share one
+// password, kept in the login keychain under the name it got when only the Mac App Store ones were here.
 export const SIGNING_DIR = join(homedir(), '.config', 'jrd', 'signing')
 const SIGNING_SERVICE = 'jrd Mac App Store signing'
-const SIGNING_FILES = [
-  { file: 'apple-distribution.p12', name: 'Apple Distribution', types: ['Apple Distribution', '3rd Party Mac Developer Application'], link: 'CSC_LINK', passwordEnv: 'CSC_KEY_PASSWORD' },
-  { file: 'mac-installer-distribution.p12', name: 'Mac Installer Distribution', types: ['3rd Party Mac Developer Installer'], link: 'CSC_INSTALLER_LINK', passwordEnv: 'CSC_INSTALLER_KEY_PASSWORD' }
-]
+const SIGNING_FILES = {
+  mas: [
+    { file: 'apple-distribution.p12', name: 'Apple Distribution', types: ['Apple Distribution', '3rd Party Mac Developer Application'], link: 'CSC_LINK', passwordEnv: 'CSC_KEY_PASSWORD' },
+    { file: 'mac-installer-distribution.p12', name: 'Mac Installer Distribution', types: ['3rd Party Mac Developer Installer'], link: 'CSC_INSTALLER_LINK', passwordEnv: 'CSC_INSTALLER_KEY_PASSWORD' }
+  ],
+  direct: [{ file: 'developer-id-application.p12', name: 'Developer ID Application', types: ['Developer ID Application'], link: 'CSC_LINK', passwordEnv: 'CSC_KEY_PASSWORD' }]
+}
+// notarytool's saved App Store Connect API key, in the login keychain: electron-builder notarizes the direct
+// download with it (APPLE_KEYCHAIN_PROFILE), and skips notarizing, without failing, when it's missing
+const NOTARY_PROFILE = 'jrd-notarization'
+const MAKE_NOTARY_PROFILE = `Make a Team Key with Developer access in App Store Connect (Users and Access, Integrations, App Store Connect API), save its AuthKey_<KEY ID>.p8 in ${SIGNING_DIR.replace(homedir(), '~')}, then: xcrun notarytool store-credentials ${NOTARY_PROFILE} --key <the .p8> --key-id <KEY ID> --issuer <Issuer ID>`
 const shown = (path) => path.replace(homedir(), '~')
 
 const signingPassword = () => {
@@ -77,8 +87,8 @@ function readP12(path, password) {
   return status === 0 ? { names: stdout.toString(), hasKey: stderr.toString().includes('Shrouded Keybag') } : null
 }
 
-// Before a long build: the certificates and profile the target signs with. Returns the environment that hands
-// electron-builder the Mac App Store certificates.
+// Before a long build: the certificates and profile the target signs with, and for direct the notarization key.
+// Returns the environment that hands electron-builder the release certificates (and notarytool's profile).
 export function checkSigning(cwd, config, profile) {
   if (profile === 'mas-dev') {
     const qualifier = configValue(config, 'identity', 'masDev') ?? ''
@@ -88,14 +98,33 @@ export function checkSigning(cwd, config, profile) {
     if (!found) fail(`No Apple Development certificate in the keychain. ${MAKE_CERTIFICATE}`)
     return {}
   }
-  const identity = configValue(config, 'identity', 'mas')
-  const profileFile = configValue(config, 'provisioningProfile', 'mas')
-  if (!identity) fail(`${CONFIG} names no mas.identity (the team's certificate name, like "Infinite Token LLC (6J8NCZC8G6)").`)
-  if (!profileFile || !existsSync(join(cwd, profileFile))) fail(`The Mac App Store provisioning profile ${profileFile ?? '(mas.provisioningProfile)'} isn't here. Make one in the developer portal (Profiles, Mac App Store Connect) and save it there.`)
+  const block = profile === 'direct' ? 'mac' : 'mas'
+  const identity = configValue(config, 'identity', block)
+  if (!identity || identity === '-') fail(`${CONFIG} names no ${block}.identity (the team's certificate name, like "Infinite Token LLC (6J8NCZC8G6)").`)
+  if (profile === 'mas') {
+    const profileFile = configValue(config, 'provisioningProfile', 'mas')
+    if (!profileFile || !existsSync(join(cwd, profileFile))) fail(`The Mac App Store provisioning profile ${profileFile ?? '(mas.provisioningProfile)'} isn't here. Make one in the developer portal (Profiles, Mac App Store Connect) and save it there.`)
+  }
   const password = signingPassword()
   if (!password) fail(`No "${SIGNING_SERVICE}" password in the keychain. Add the .p12 files' password (it asks for it): security add-generic-password -a "$USER" -s "${SIGNING_SERVICE}" -w`)
   const env = {}
-  for (const { file, name, types, link, passwordEnv } of SIGNING_FILES) {
+  // Asks Apple, so a missing or refused key fails here rather than after the build, when electron-builder would
+  // only warn and leave the app unnotarized
+  if (profile === 'direct') {
+    const { status, stderr } = spawnSync('xcrun', ['notarytool', 'history', '--keychain-profile', NOTARY_PROFILE])
+    if (status !== 0)
+      fail(
+        `notarytool's ${NOTARY_PROFILE} profile doesn't work (${
+          stderr
+            .toString()
+            .trim()
+            .split('\n')[0]
+            .replace(/^Error: |\.$/g, '') || 'no answer'
+        }). ${MAKE_NOTARY_PROFILE}`
+      )
+    env.APPLE_KEYCHAIN_PROFILE = NOTARY_PROFILE
+  }
+  for (const { file, name, types, link, passwordEnv } of SIGNING_FILES[profile]) {
     const path = join(SIGNING_DIR, file)
     if (!existsSync(path)) fail(`No ${shown(path)}. Export the ${name} certificate for ${identity} from Keychain Access's My Certificates as a .p12 and save it there. ${MAKE_CERTIFICATE}`)
     const p12 = readP12(path, password)
@@ -112,7 +141,7 @@ const newest = (paths) => paths.sort((a, b) => statSync(b).mtimeMs - statSync(a)
 // The newest build folder for the profile in electron-builder's output (out/mac-arm64, out/mas-dev-arm64,
 // out/mas-arm64) that holds the app, or null
 function buildFolder(outDir, profile, productName) {
-  const pattern = { development: /^mac(-|$)/, 'mas-dev': /^mas-dev(-|$)/, mas: /^mas(-(arm64|x64|universal))?$/ }[profile]
+  const pattern = { development: /^mac(-|$)/, 'mas-dev': /^mas-dev(-|$)/, mas: /^mas(-(arm64|x64|universal))?$/, direct: /^mac(-|$)/ }[profile]
   const names = existsSync(outDir) ? readdirSync(outDir) : []
   return newest(names.filter((name) => pattern.test(name) && existsSync(join(outDir, name, `${productName}.app`))).map((name) => join(outDir, name)))
 }
@@ -136,9 +165,55 @@ const executables = (app) =>
     .split('\n')
     .filter((path) => path && /Mach-O.*executable/.test(run('file', ['-b', path])))
 
-// What App Store Connect would refuse (or a broken local build), caught before anything goes anywhere: run on
-// the app electron-builder just made and, for mas, its .pkg. Returns the problems, empty when there are none.
-export function checkBuild({ app, pkg, profile, appId, version, build, team }) {
+// What Gatekeeper would refuse in a downloaded copy: the app's Developer ID signature, hardened runtime (which
+// notarization requires), the stapled ticket and Gatekeeper's own verdict, then the same app inside the DMG,
+// which is what people download, and inside the zip, which is what electron-updater installs (when the build
+// makes one)
+function checkDirect(app, dmg, zip, team, problems) {
+  const signer = report('codesign', ['-dvv', app])
+  if (!signer.includes('Authority=Developer ID Application:')) problems.push("it isn't signed with a Developer ID Application certificate")
+  if (team && !signer.includes(`TeamIdentifier=${team}`)) problems.push(`it isn't signed for team ${team}`)
+  if (!/flags=0x[0-9a-f]*\(runtime\)/.test(signer)) problems.push("it doesn't have hardened runtime on")
+  const assess = (path) => report('spctl', ['--assess', '--type', 'execute', '--verbose=2', path])
+  const stapled = (path) => spawnSync('xcrun', ['stapler', 'validate', path]).status === 0
+  if (!stapled(app)) problems.push('it has no notarization ticket stapled to it')
+  if (!assess(app).includes('source=Notarized Developer ID')) problems.push(`Gatekeeper doesn't accept it as notarized: ${assess(app).trim()}`)
+  // The app in a DMG's or zip's opened copy
+  const checkInside = (dir, file) => {
+    const inside = readdirSync(dir).find((name) => name.endsWith('.app'))
+    if (!inside) problems.push(`${relative(process.cwd(), file)} holds no app`)
+    else if (!stapled(join(dir, inside)) || !assess(join(dir, inside)).includes('source=Notarized Developer ID')) problems.push(`the app in ${relative(process.cwd(), file)} isn't the notarized one`)
+  }
+  if (zip) {
+    const unzipped = run('mktemp', ['-d']).trim()
+    try {
+      if (spawnSync('ditto', ['-x', '-k', zip, unzipped]).status === 0) checkInside(unzipped, zip)
+      else problems.push(`${relative(process.cwd(), zip)} doesn't open`)
+    } finally {
+      rmSync(unzipped, { recursive: true, force: true })
+    }
+  }
+  if (!dmg) {
+    problems.push('electron-builder made no DMG')
+    return
+  }
+  const mount = run('mktemp', ['-d']).trim()
+  const attached = spawnSync('hdiutil', ['attach', dmg, '-nobrowse', '-readonly', '-mountpoint', mount]).status === 0
+  if (!attached) {
+    problems.push(`${relative(process.cwd(), dmg)} doesn't open`)
+    return
+  }
+  try {
+    checkInside(mount, dmg)
+  } finally {
+    spawnSync('hdiutil', ['detach', mount, '-quiet'])
+  }
+}
+
+// What App Store Connect or Gatekeeper would refuse (or a broken local build), caught before anything goes
+// anywhere: run on the app electron-builder just made and, for mas, its .pkg, for direct, its DMG and zip.
+// Returns the problems, empty when there are none.
+export function checkBuild({ app, pkg, dmg, zip, profile, appId, version, build, team }) {
   const problems = []
   const info = plistJson(readFileSync(join(app, 'Contents', 'Info.plist')))
   const signature = spawnSync('codesign', ['--verify', '--deep', '--strict', app])
@@ -146,6 +221,10 @@ export function checkBuild({ app, pkg, profile, appId, version, build, team }) {
   if (appId && info.CFBundleIdentifier !== appId) problems.push(`its bundle id is ${info.CFBundleIdentifier}, not ${appId}`)
   if (version && info.CFBundleShortVersionString !== version) problems.push(`its version is ${info.CFBundleShortVersionString}, not package.json's ${version}`)
   if (profile === 'development') return problems
+  if (profile === 'direct') {
+    checkDirect(app, dmg, zip, team, problems)
+    return problems
+  }
 
   for (const path of executables(app)) {
     if (!entitlements(path)['com.apple.security.app-sandbox']) problems.push(`${relative(app, path)} isn't sandboxed`)
@@ -180,9 +259,10 @@ export function buildElectron(cwd, profile) {
   const outDir = join(cwd, configValue(config, 'output', 'directories') ?? 'dist')
   const web = webSource(cwd, scripts)
   const store = profile === 'mas'
+  const direct = profile === 'direct'
 
-  // What gets uploaded has to be a commit of each: the shell and the web app it bundles
-  if (store) {
+  // What gets uploaded or published has to be a commit of each: the shell and the web app it bundles
+  if (store || direct) {
     requireCleanTree(cwd)
     if (web) requireCleanTree(web)
   }
@@ -199,9 +279,19 @@ export function buildElectron(cwd, profile) {
   const next = store ? String(Number(current) + 1) : null
   if (store) writeFileSync(configPath, config.replace(/^(buildVersion:\s*)(['"]?)\d+\2/m, `$1$2${next}$2`))
   const restore = () => store && execSync(`git checkout -- ${CONFIG}`, { cwd, stdio: 'ignore' })
-  const team = store ? (config.match(/^\s+ElectronTeamID:\s*['"]?([A-Z0-9]{10})/m)?.[1] ?? configValue(config, 'identity', 'mas')?.match(/\(([A-Z0-9]{10})\)$/)?.[1]) : null
+  const teamOf = (identity) => identity?.match(/\(([A-Z0-9]{10})\)$/)?.[1]
+  const team = store ? (config.match(/^\s+ElectronTeamID:\s*['"]?([A-Z0-9]{10})/m)?.[1] ?? teamOf(configValue(config, 'identity', 'mas'))) : direct ? teamOf(configValue(config, 'identity', 'mac')) : null
 
-  let dir, app, pkg, problems
+  let dir, app, pkg, dmg, zip, problems
+  // A DMG or zip left in the output folder by an earlier build doesn't count
+  const started = Date.now()
+  const madeHere = (extension) =>
+    newest(
+      readdirSync(outDir)
+        .filter((name) => name.endsWith(extension))
+        .map((name) => join(outDir, name))
+        .filter((path) => statSync(path).mtimeMs >= started)
+    )
   try {
     exec(`npm run ${script}`, cwd, signingEnv)
     dir = buildFolder(outDir, profile, productName)
@@ -214,7 +304,9 @@ export function buildElectron(cwd, profile) {
             .map((name) => join(dir, name))
         )
       : null
-    problems = checkBuild({ app, pkg, profile, appId, version: pkgJson.version, build: next, team })
+    dmg = direct ? madeHere('.dmg') : null
+    zip = direct ? madeHere('.zip') : null
+    problems = checkBuild({ app, pkg, dmg, zip, profile, appId, version: pkgJson.version, build: next, team })
   } catch (e) {
     restore()
     fail(e.status != null ? `npm run ${script} failed.` : e.message)
@@ -223,6 +315,17 @@ export function buildElectron(cwd, profile) {
     restore()
     console.error(problems.map((problem) => `  ${problem}`).join('\n'))
     fail(`The ${profile} build of ${productName} has problems.`)
+  }
+
+  if (direct) {
+    mkdirSync(BUILDS_DIR, { recursive: true })
+    const destPath = join(BUILDS_DIR, `${productName}-${formatTimestamp(new Date())}.dmg`)
+    copyFileSync(dmg, destPath)
+    recordBuild({ app: productName, bundleId: appId, platform: 'macos', profile, version: pkgJson.version, sha: git(cwd, 'rev-parse', 'HEAD'), dirty: false, ...(web && { web: relative(cwd, web), webSha: git(web, 'rev-parse', 'HEAD') }), file: destPath, createdAt: Date.now() })
+    log.succeed(`${productName} ${pkgJson.version} signed with Developer ID, notarized, checked and saved to ${destPath}`)
+    // For `jrd ship draft`, which releases what's in the output folder: anything there older than this build is
+    // left from an earlier one
+    return { outDir, started }
   }
 
   if (!store) {
