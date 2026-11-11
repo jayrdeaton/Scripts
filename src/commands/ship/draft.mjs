@@ -89,6 +89,22 @@ function findRun(cwd, sha, webSha) {
   return null
 }
 
+// A GitHub read tried up to five times, 3 seconds apart: the API can answer a 500 for a run it has only just made.
+// Fails with message (and gh's words) after the last, or returns null when there's no message.
+async function retried(read, message) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return read()
+    } catch (e) {
+      if (attempt >= 5) {
+        if (message) fail(`${message}: ${ghError(e)}`)
+        return null
+      }
+      await sleep(3000)
+    }
+  }
+}
+
 async function dispatch(cwd, workflow, branch, sha, webSha) {
   const args = ['workflow', 'run', WORKFLOW, '--ref', branch]
   if (workflow.input && webSha) args.push('-f', `${workflow.input}=${webSha}`)
@@ -103,10 +119,10 @@ async function dispatch(cwd, workflow, branch, sha, webSha) {
   let id = output.match(/\/actions\/runs\/(\d+)/)?.[1]
   for (let attempt = 0; !id && attempt < 10; attempt++) {
     await sleep(3000)
-    id = findRun(cwd, sha, webSha)?.id
+    id = (await retried(() => findRun(cwd, sha, webSha)))?.id
   }
   if (!id) fail('The Build workflow was started, but its run never showed up.')
-  const run = ghJson(['run', 'view', String(id), '--json', 'databaseId,headSha,url'], cwd)
+  const run = await retried(() => ghJson(['run', 'view', String(id), '--json', 'databaseId,headSha,url'], cwd), `Couldn't read the Build workflow's run ${id}`)
   // Someone pushing between the check and the dispatch
   if (run.headSha !== sha) fail(`The Build workflow's run is building ${run.headSha.slice(0, 7)}, not ${sha.slice(0, 7)}: ${run.url}`)
   return { id: run.databaseId, url: run.url }
@@ -211,7 +227,7 @@ export const command = Program.command('draft')
       const branch = pushedBranch(cwd)
       const sha = git(cwd, 'rev-parse', 'HEAD')
       const webSha = web ? pushedCommit(web) : null
-      run = findRun(cwd, sha, webSha)
+      run = await retried(() => findRun(cwd, sha, webSha), "Couldn't read the Build workflow's runs")
       if (run) log.info(`Using the Build workflow's run for these commits: ${run.url}`)
       else run = await dispatch(cwd, workflow, branch, sha, webSha)
     } else {
