@@ -177,7 +177,7 @@ function downloadArtifacts(cwd, run, dir) {
 }
 
 export const command = Program.command('draft')
-  .description("Draft a GitHub release of the Electron app's direct downloads in the current directory, for package.json's version, in the repo electron-builder.yml's publish block names: builds the Mac's DMG and zip (as ship build direct) while the app's Build workflow, if it has one, builds Linux's AppImages and debs and the Microsoft Store packages (saved to ~/Downloads/Builds for Partner Center), checks every file against its update feed's hash and size and every download keeps its fixed name, uploads them to a draft and checks what GitHub stored. ship publish publishes it")
+  .description("Draft a GitHub release of the Electron app's direct downloads in the current directory, for package.json's version, in the repo electron-builder.yml's publish block names: builds the Mac's DMG and zip (as ship build direct) while the app's Build workflow, if it has one, builds Linux's AppImages and debs and the Microsoft Store packages (saved to ~/Downloads/Builds for Partner Center), checks every file against its update feed's hash and size and that every name with a version carries this one, uploads them to a draft and checks what GitHub stored. ship publish publishes it")
   .option('n', 'notes', '<notes>', 'The release notes (Markdown)')
   .option('F', 'notes-file', '<file>', 'Read the release notes from a file')
   .option('t', 'title', '<title>', 'The release title (default: the latest release\'s with this version, like "SlingScan for Mac 1.0.4", or "<productName> <version>")')

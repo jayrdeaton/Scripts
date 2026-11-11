@@ -79,7 +79,7 @@ export const listReleases = (slug) => ghJson(['release', 'list', '--repo', slug,
 // A release by its tag, a draft too (gh finds a draft by the tag it will get)
 export const viewRelease = (slug, tag) => ghJson(['release', 'view', tag, '--repo', slug, '--json', 'tagName,name,body,isDraft,url,assets'])
 
-// The release every copy updates from now, and whose files the fixed-name links lead to, or null before the first
+// The release every copy updates from now, and whose files releases/latest/download/<name> leads to, or null before the first
 export function latestRelease(slug, releases) {
   const published = releases.filter((release) => !release.isDraft && !release.isPrerelease)
   const latest = published.find((release) => release.isLatest) ?? published.sort((a, b) => compareVersions(b.tagName, a.tagName))[0]
@@ -164,19 +164,22 @@ export async function feedFiles(dir, name, { version, since, from }, problems) {
   return files
 }
 
-// Download links point at releases/latest/download/<name> (lumber.infinitetoken.com/download links Lumber.dmg,
-// Lumber-x86_64.AppImage, lumber-desktop_amd64.deb...), so the files people download by hand keep one name from
-// release to release, and every release carries every name the last one had. Only files a feed names, like the Mac's
-// zip, which electron-updater downloads, can carry their version.
-const DOWNLOADS = /\.(dmg|AppImage|deb|rpm|snap|flatpak|exe|msi|pkg)$/
+// File names across releases. Lumber-Desktop's downloads carry their version from 1.3.0 on (Lumber-1.3.0-arm64.dmg;
+// Jay, 2026-11-11), and its site picks each one from the latest release through GitHub's API; SlingScan-Desktop's DMG
+// keeps a fixed name, which its links reach through releases/latest/download/<name>. Either way: no two files share a
+// name, a name that carries a version carries this one (anything else is left from an earlier build), and a fixed name
+// the latest release has and this one drops is said, since releases/latest/download/<name> stops working for it.
+const VERSION_IN_NAME = /\d+\.\d+\.\d+/g
 export function checkNames(names, version, previous, problems) {
   for (const name of new Set(names.filter((name, i) => names.indexOf(name) !== i))) problems.push(`two files are named ${name}`)
-  for (const name of names) if (DOWNLOADS.test(name) && name.includes(version)) problems.push(`${name} has the version in its name, so its download link would change with every release`)
-  if (!previous) return
-  const old = previous.tagName.replace(/^v/, '')
-  for (const { name } of previous.assets) {
-    if (!name.includes(old) && !names.includes(name)) problems.push(`${previous.tagName} has ${name} and this release doesn't, so releases/latest/download/${name} would stop working`)
+  const core = version.split('-')[0]
+  for (const name of names) {
+    const other = name.match(VERSION_IN_NAME)?.find((found) => found !== core)
+    if (other) problems.push(`${name} is named for ${other}, not ${version}, so it's left from an earlier build`)
   }
+  if (!previous) return
+  const dropped = previous.assets.map((asset) => asset.name).filter((name) => !name.match(VERSION_IN_NAME) && !names.includes(name))
+  if (dropped.length) log.warn(`${previous.tagName} has ${dropped.join(', ')}, which this release doesn't, so releases/latest/download/<name> stops working for ${dropped.length === 1 ? 'it' : 'them'}. That's expected when the names take on versions.`)
 }
 
 // A release's files as GitHub holds them, against the files uploaded: every one there, fully uploaded, the same size
@@ -204,15 +207,20 @@ export function printFiles(files) {
   for (const file of files) console.log(`  ${file.name.padEnd(width)}  ${Color.faint(formatSize(file.size).padStart(8))}${file.from ? Color.faint(`  ${file.from}`) : ''}`)
 }
 
-// Whether releases/latest/download/<name> leads to this release's file: null when it does, else what's wrong. GitHub
-// redirects that link to the latest release's download/<tag>/<name> even when no such file exists, so the file is
-// asked for too.
+// Whether a file answers at its link with this release's copy: null when it does, else what's wrong. A file with a
+// version in its name is asked for at releases/download/<tag>/<name>; one without (a feed, or a fixed-name download)
+// at releases/latest/download/<name>, which GitHub redirects to the latest release's copy even when no such file
+// exists, so the file is asked for too.
 async function linkProblem(slug, tag, asset) {
-  const link = `releases/latest/download/${asset.name}`
+  const latest = !asset.name.match(VERSION_IN_NAME)
+  const link = latest ? `releases/latest/download/${asset.name}` : `releases/download/${tag}/${asset.name}`
   try {
-    const first = await fetch(`https://github.com/${slug}/${link}`, { method: 'HEAD', redirect: 'manual' })
-    const location = first.headers.get('location') ?? ''
-    if (!location.endsWith(`/releases/download/${tag}/${asset.name}`)) return `${link} leads to ${location || `a ${first.status}`}, not ${tag}'s file`
+    let location = `https://github.com/${slug}/${link}`
+    if (latest) {
+      const first = await fetch(location, { method: 'HEAD', redirect: 'manual' })
+      location = first.headers.get('location') ?? ''
+      if (!location.endsWith(`/releases/download/${tag}/${asset.name}`)) return `${link} leads to ${location || `a ${first.status}`}, not ${tag}'s file`
+    }
     const file = await fetch(location, { method: 'HEAD' })
     if (!file.ok) return `${link} answers ${file.status}`
     const size = Number(file.headers.get('content-length'))
@@ -222,11 +230,10 @@ async function linkProblem(slug, tag, asset) {
   }
 }
 
-// After publishing: every file without the version in its name answers at its fixed-name link with this release's
-// copy. "latest" can lag a little behind publishing, so each is tried for up to a minute.
+// After publishing: every file answers at its link with this release's copy. "latest" can lag a little behind
+// publishing, so each is tried for up to a minute.
 export async function checkLinks(slug, release, problems) {
-  const version = release.tagName.replace(/^v/, '')
-  for (const asset of release.assets.filter((asset) => !asset.name.includes(version))) {
+  for (const asset of release.assets) {
     let problem
     for (let attempt = 0; attempt < 12; attempt++) {
       if (attempt) await sleep(5000)
@@ -320,8 +327,8 @@ function checkDraft(slug, release, version, problems) {
 }
 
 // The draft for the target's version, checked once more (its feeds against its files, the version newer than the
-// latest release, the fixed names), shown, and published only after a yes or with yes: then every fixed-name link
-// is followed to its file. offered: at the end of `jrd ship draft`, where a no, or no terminal to ask in, leaves the
+// latest release, the names), shown, and published only after a yes or with yes: then every file is asked for at
+// its link. offered: at the end of `jrd ship draft`, where a no, or no terminal to ask in, leaves the
 // draft for `jrd ship publish`. Returns whether it published.
 export async function publishDraft({ productName, version, tag, slug }, { yes = false, offered = false } = {}) {
   let release, previous
@@ -382,11 +389,11 @@ export async function publishDraft({ productName, version, tag, slug }, { yes = 
   const linkProblems = []
   await checkLinks(slug, published, linkProblems)
   if (linkProblems.length) {
-    spinner.fail(`${published.name} is published, but not every download link leads to its file yet:`)
+    spinner.fail(`${published.name} is published, but not every file answers at its link yet:`)
     console.error(linkProblems.map((problem) => `  ${problem}`).join('\n'))
     process.exitCode = 1
     return true
   }
-  spinner.succeed(`Published ${published.name}: ${published.url}. Every fixed-name download link leads to its file.`)
+  spinner.succeed(`Published ${published.name}: ${published.url}. Every file answers at its link.`)
   return true
 }
