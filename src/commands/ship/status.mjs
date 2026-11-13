@@ -12,6 +12,7 @@ const execFileAsync = promisify(execFile)
 
 const DEVELOPER = join(homedir(), 'Developer')
 const PROFILE_LABELS = { production: 'Prod build', preview: 'Preview build', development: 'Dev build' }
+const ANDROID_LABELS = { production: 'prod', development: 'dev' }
 const UPDATE_BRANCHES = ['production', 'development']
 // Where `jrd ship bump-ota` keeps otaVersion.
 const RELEASE_FILE = 'src/constants/release.ts'
@@ -119,9 +120,10 @@ async function webState(dir) {
   }
 }
 
-// Every finished iOS EAS build, newest first, and the profiles of any still queued or building.
-async function easBuilds(dir) {
-  const list = await runJson('eas', ['build:list', '--platform', 'ios', '--limit', '30', '--json', '--non-interactive'], dir)
+// Every finished EAS build for a platform (ios or android), newest first, and the profiles of any still
+// queued or building.
+async function easBuilds(dir, platform) {
+  const list = await runJson('eas', ['build:list', '--platform', platform, '--limit', '30', '--json', '--non-interactive'], dir)
   if (!list) return { builds: [], pending: [], failed: true }
   const pending = list.filter((b) => ['NEW', 'IN_QUEUE', 'IN_PROGRESS'].includes(b.status)).map((b) => b.buildProfile)
   const builds = list
@@ -138,12 +140,14 @@ async function easBuilds(dir) {
   return { builds, pending }
 }
 
-// Every local build `jrd ship build` made: its records (kept after an .ipa is installed and deleted),
+const fromLog = (r) => ({ ...r, source: existsSync(r.file) ? `local ${basename(r.file)}` : 'local' })
+
+// Every local iOS build `jrd ship build` made: its records (kept after an .ipa is installed and deleted),
 // plus any .ipa in ~/Downloads/Builds from before it kept them.
 function localBuilds(name, bundleId) {
-  // Without the Mac App Store builds an Electron app records, which can share the iPhone app's bundle id
-  const records = readBuildLog().filter((r) => r.platform !== 'macos' && (bundleId ? r.bundleId === bundleId : r.app === name))
-  const fromLog = records.map((r) => ({ ...r, source: existsSync(r.file) ? `local ${basename(r.file)}` : 'local' }))
+  // The records with no platform: Mac App Store builds (which can share the iPhone app's bundle id) are
+  // marked macos, and Android builds android
+  const records = readBuildLog().filter((r) => !r.platform && (bundleId ? r.bundleId === bundleId : r.app === name))
 
   const files = existsSync(BUILDS_DIR) ? readdirSync(BUILDS_DIR).filter((file) => file.startsWith(`${name}-`) && file.endsWith('.ipa')) : []
   const unrecorded = files
@@ -155,7 +159,7 @@ function localBuilds(name, bundleId) {
     })
     .filter(Boolean)
 
-  return [...fromLog, ...unrecorded]
+  return [...records.map(fromLog), ...unrecorded]
 }
 
 // The app as installed on each booted simulator (an `expo run:ios` or simulator build).
@@ -213,17 +217,28 @@ async function latestUpdate(dir, branch) {
   }
 }
 
+// Newest per profile across EAS and local builds: a local production build counts as much as a cloud one.
+const newestPerProfile = (known) => known.filter((b, i) => known.findIndex((x) => x.profile === b.profile) === i)
+
 async function appState(dir, phones) {
   const { expo } = readJson(join(dir, 'app.json'))
   const name = expo.name
   const bundleId = expo.ios?.bundleIdentifier
+  const androidPackage = expo.android?.package
 
-  const [code, web, eas, simulators, updates] = await Promise.all([codeState(dir), webState(dir), easBuilds(dir), simulatorInstalls(bundleId), Promise.all(UPDATE_BRANCHES.map((branch) => latestUpdate(dir, branch)))])
+  const [code, web, eas, androidEas, simulators, updates] = await Promise.all([codeState(dir), webState(dir), easBuilds(dir, 'ios'), androidPackage ? easBuilds(dir, 'android') : null, simulatorInstalls(bundleId), Promise.all(UPDATE_BRANCHES.map((branch) => latestUpdate(dir, branch)))])
   const known = [...eas.builds, ...localBuilds(name, bundleId)].sort((a, b) => b.createdAt - a.createdAt)
 
-  // Newest per profile across EAS and local builds: a local production build counts as much as a cloud one.
-  const builds = known.filter((b, i) => known.findIndex((x) => x.profile === b.profile) === i)
+  const builds = newestPerProfile(known)
   for (const b of builds) b.behind = b.sha ? await commitsSince(dir, b.sha) : null
+
+  // Android's builds are kept apart: their fingerprints are Android's, and their build numbers (versionCode)
+  // come from a counter of their own, so they'd neither match the iOS fingerprint nor pin down a phone's build.
+  const localAndroid = androidPackage ? readBuildLog().filter((r) => r.platform === 'android' && r.package === androidPackage) : []
+  const android = newestPerProfile([...(androidEas?.builds ?? []), ...localAndroid.map(fromLog)].sort((a, b) => b.createdAt - a.createdAt))
+  for (const b of android) b.behind = b.sha ? await commitsSince(dir, b.sha) : null
+  // Only for an app with Android builds to compare it to: most have none
+  if (android.length) code.androidFingerprint = (await runJson('eas', ['fingerprint:generate', '--platform', 'android', '--json', '--non-interactive'], dir))?.hash ?? null
 
   // Build numbers come from one EAS counter shared by every profile, local builds included, so a
   // version and build number pins down which build a phone has.
@@ -255,9 +270,10 @@ async function appState(dir, phones) {
   const reachable = updates.filter((u) => u && (u.branch === 'production' || builds.some((b) => b.profile === u.branch)))
 
   // A source that couldn't answer would otherwise read as having nothing to report.
-  const failed = [!code.fingerprint && 'eas fingerprint:generate', eas.failed && 'eas build:list', web?.failed && 'vercel ls', ...unreadPhones.map((phone) => `the app list on ${phone}`)].filter(Boolean)
+  const failed = [!code.fingerprint && 'eas fingerprint:generate', android.length && !code.androidFingerprint && 'eas fingerprint:generate --platform android', eas.failed && 'eas build:list', androidEas?.failed && 'eas build:list --platform android', web?.failed && 'vercel ls', ...unreadPhones.map((phone) => `the app list on ${phone}`)].filter(Boolean)
 
-  return { name, dir, code, web, builds, pending: eas.pending, simulators, phones: phoneInstalls, updates: reachable, failed }
+  const pending = [...eas.pending, ...(androidEas?.pending ?? []).map((profile) => `${profile} (Android)`)]
+  return { name, dir, code, web, builds, android, pending, simulators, phones: phoneInstalls, updates: reachable, failed }
 }
 
 // ---------- verdicts ----------
@@ -326,16 +342,17 @@ function behindText(n) {
   return Color.yellow(`${n} commit${n === 1 ? '' : 's'} behind`)
 }
 
-function nativeText(fingerprint, code) {
-  if (!fingerprint || !code.fingerprint) return Color.faint('native unknown')
-  return fingerprint === code.fingerprint ? Color.green('native matches') : Color.yellow('native differs')
+// current: the checkout's fingerprint for the build's platform
+function nativeText(fingerprint, current) {
+  if (!fingerprint || !current) return Color.faint('native unknown')
+  return fingerprint === current ? Color.green('native matches') : Color.yellow('native differs')
 }
 
 // One app's report as text, so it can be printed above the spinner while other apps are still checking.
 function formatApp(app) {
-  const { code, web, builds, pending, simulators, phones, updates } = app
+  const { code, web, builds, android, pending, simulators, phones, updates } = app
   const lines = []
-  const row = (label, ...parts) => lines.push(`  ${padRight(Color.bold(label), 13)} ${parts.filter(Boolean).join(Color.faint(' · '))}`)
+  const row = (label, ...parts) => lines.push(`  ${padRight(Color.bold(label), 15)} ${parts.filter(Boolean).join(Color.faint(' · '))}`)
 
   const head = [Color.bold(app.name), code.version && `v${code.version}`, code.ota !== undefined && `ota ${code.ota}`, short(code.head)]
   if (code.tag) head.push(code.sinceTag ? Color.yellow(`${code.sinceTag} unreleased since ${code.tag}`) : Color.green(`released as ${code.tag}`))
@@ -350,7 +367,7 @@ function formatApp(app) {
     else row('Web', [web.tag, short(web.sha)].filter(Boolean).join(' '), ago(web.createdAt), behindText(web.behind))
   }
 
-  const buildRow = (label, b) => row(label, `${b.version} (${b.build})`, b.sha && short(b.sha), Color.faint(b.source), ago(b.createdAt), b.sha && behindText(b.behind), nativeText(b.fingerprint, code))
+  const buildRow = (label, b, current = code.fingerprint) => row(label, `${b.version} (${b.build})`, b.sha && short(b.sha), Color.faint(b.source), ago(b.createdAt), b.sha && behindText(b.behind), nativeText(b.fingerprint, current))
   const updateRow = (label, u) => {
     const target = builds.find((b) => b.profile === u.branch)
     const reaches = !target ? Color.red('no build to run it') : u.fingerprint === target.fingerprint ? Color.green(`runs on ${target.version} (${target.build})`) : Color.red(`not for ${target.version} (${target.build})`)
@@ -364,10 +381,12 @@ function formatApp(app) {
     if (u) updateRow(profile === 'production' ? 'Prod update' : 'Dev update', u)
   }
   for (const b of builds.filter((x) => !PROFILE_LABELS[x.profile])) buildRow(`${b.profile} build`, b)
+  // An Android row's build number is its version code, and its fingerprint is compared to the checkout's Android one
+  for (const b of android) buildRow(`Android ${ANDROID_LABELS[b.profile] ?? b.profile}`, b, code.androidFingerprint)
   if (pending.length) row('Building', pending.join(', '))
-  for (const s of simulators) row('Simulator', `${s.version} (${s.build})`, Color.faint(s.source), ago(s.createdAt), nativeText(s.fingerprint, code))
+  for (const s of simulators) row('Simulator', `${s.version} (${s.build})`, Color.faint(s.source), ago(s.createdAt), nativeText(s.fingerprint, code.fingerprint))
   for (const p of phones) {
-    const detail = p.recorded ? [p.sha && behindText(p.behind), nativeText(p.fingerprint, code)] : [Color.faint('no build record')]
+    const detail = p.recorded ? [p.sha && behindText(p.behind), nativeText(p.fingerprint, code.fingerprint)] : [Color.faint('no build record')]
     row('Phone', `${p.version} (${p.build})`, p.sha && short(p.sha), Color.faint(p.source), p.profile && Color.faint(p.profile), ago(p.createdAt), ...detail)
   }
 

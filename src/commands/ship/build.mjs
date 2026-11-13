@@ -1,11 +1,11 @@
 import { execSync } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync } from 'node:fs'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 
 import { log, Program } from 'termkit'
 
 import { buildElectron, isElectronProject } from '../../lib/electron.mjs'
-import { BUILDS_DIR, exec, formatTimestamp, ipaInfo, recordBuild, runVerify, validateProfile } from '../../lib/ship.mjs'
+import { androidInfo, BUILDS_DIR, exec, formatTimestamp, ipaInfo, recordBuild, runVerify, validateProfile } from '../../lib/ship.mjs'
 
 // eas-cli asks about export compliance on an iOS build whose app.json has no ios.infoPlist.ITSAppUsesNonExemptEncryption,
 // and its questions read backwards: Yes to "iOS app only uses standard/exempt encryption?" writes false into app.json before
@@ -85,10 +85,15 @@ export const command = Program.command('build', '<profile>')
     copyFileSync(join(cwd, artifact.name), destPath)
     unlinkSync(join(cwd, artifact.name))
 
-    // Kept after the .ipa is installed and deleted: `jrd ship status` matches a phone's version and
-    // build number to it to know what code and native fingerprint the phone is running.
-    const info = artifact.ext === 'ipa' ? ipaInfo(destPath) : null
-    if (info) recordBuild({ app: projectName, bundleId: expo.ios?.bundleIdentifier, profile, ...info, sha, dirty, file: destPath, createdAt: artifact.epoch })
+    // Kept after the artifact is installed and deleted: `jrd ship status` matches a phone's version and
+    // build number to an .ipa's to know what code and native fingerprint the phone is running, and lists
+    // the newest Android build per profile beside the EAS cloud's. An Android build is marked, since
+    // status reads the records with no platform as iOS builds, and names its package.
+    const read = { ipa: ipaInfo, aab: androidInfo, apk: androidInfo }[artifact.ext]
+    const info = read?.(destPath)
+    const platform = artifact.ext === 'ipa' ? { bundleId: expo.ios?.bundleIdentifier } : { platform: 'android' }
+    if (info) recordBuild({ app: projectName, ...platform, profile, ...info, sha, dirty, file: destPath, createdAt: artifact.epoch })
+    else if (read) log.warn(`Couldn't read the version from ${basename(destPath)}, so builds.json has no record of it.`)
 
     log.succeed(`Build saved to ${destPath}`)
   })
