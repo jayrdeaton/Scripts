@@ -5,7 +5,7 @@ import { basename, join, resolve } from 'node:path'
 import { Color, confirm, log, Program, Spinner } from 'termkit'
 
 import { buildElectron } from '../../lib/electron.mjs'
-import { checkAssets, checkNames, compareVersions, fail, feedFiles, gh, ghError, ghJson, ghLoud, git, isFeed, latestRelease, listReleases, printFiles, publishDraft, releaseNotes, releaseTarget, shown, sleep, totalSize, viewRelease, WHATS_NEW_FILES, whatsNew } from '../../lib/release.mjs'
+import { checkAssets, checkNames, compareVersions, fail, feedFiles, gh, ghError, ghJson, ghLoud, git, isFeed, latestRelease, listReleases, printFiles, publishDraft, releaseNotes, releaseTarget, removeUploadedBuilds, shown, sleep, totalSize, viewRelease, WHATS_NEW_FILES, whatsNew } from '../../lib/release.mjs'
 import { BUILDS_DIR, formatTimestamp, requireCleanTree } from '../../lib/ship.mjs'
 
 // `jrd ship draft`: everything a direct release of an Electron app needs, up to a checked draft on GitHub. The Mac's
@@ -177,7 +177,7 @@ function downloadArtifacts(cwd, run, dir) {
 }
 
 export const command = Program.command('draft')
-  .description("Draft a GitHub release of the Electron app's direct downloads in the current directory, for package.json's version, in the repo electron-builder.yml's publish block names: builds the Mac's DMG and zip (as ship build direct) while the app's Build workflow, if it has one, builds Linux's AppImages and debs and the Microsoft Store packages (saved to ~/Downloads/Builds for Partner Center), checks every file against its update feed's hash and size and that every name with a version carries this one, uploads them to a draft and checks what GitHub stored. ship publish publishes it")
+  .description("Draft a GitHub release of the Electron app's direct downloads in the current directory, for package.json's version, in the repo electron-builder.yml's publish block names: builds the Mac's DMG and zip (as ship build direct) while the app's Build workflow, if it has one, builds Linux's AppImages and debs and the Microsoft Store packages (saved to ~/Downloads/Builds for Partner Center), checks every file against its update feed's hash and size and that every name with a version carries this one, uploads them to a draft and checks what GitHub stored, then deletes the app's builds in ~/Downloads/Builds that a release now holds byte for byte (the Mac's DMG). ship publish publishes it")
   .option('n', 'notes', '<notes>', 'The release notes (Markdown)')
   .option('F', 'notes-file', '<file>', 'Read the release notes from a file')
   .option('t', 'title', '<title>', 'The release title (default: the latest release\'s with this version, like "SlingScan for Mac 1.0.4", or "<productName> <version>")')
@@ -308,6 +308,7 @@ export const command = Program.command('draft')
       fail(`The draft doesn't hold what was built. It's still a draft, nothing is published: look at it at ${release.url}, or delete it with gh release delete ${tag} --repo ${slug} --yes`)
     }
     log.succeed(`Drafted ${title} with ${files.length} files, each one as built: ${release.url}`)
+    await removeUploadedBuilds(slug, productName)
 
     // Shown, and published only on a yes; otherwise it stays a draft for jrd ship publish
     await publishDraft(target, { offered: true })

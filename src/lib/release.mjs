@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { Color, confirm, log, Spinner } from 'termkit'
 
 import { configValue, isElectronProject, webSource } from './electron.mjs'
+import { BUILDS_DIR } from './ship.mjs'
 
 // Shared by `jrd ship draft` and `jrd ship publish`: an Electron app's direct downloads, released on GitHub in the
 // repo electron-builder.yml's publish block names (Lumber-Desktop's infinitetoken/Lumber-Releases), where
@@ -196,6 +197,37 @@ export function checkAssets(release, files, problems) {
     else if (asset.digest !== `sha256:${file.sha256}`) problems.push(`${file.name} on the release isn't the file that was uploaded: their sha256 hashes differ`)
   }
   for (const name of assets.keys()) problems.push(`the release also has ${name}, which wasn't uploaded`)
+}
+
+// Once files are uploaded: the app's files in ~/Downloads/Builds (named <productName>-...) that one of the repo's
+// releases, drafts included, holds byte for byte, deleted, since GitHub's copy is the one that counts. That's the DMG
+// ship build direct saved there for this draft, and any earlier build already released. Matched by size, then by
+// sha256 against GitHub's digest, so a build that never went up (a dry run's, or a store package for App Store
+// Connect or Partner Center) stays.
+export async function removeUploadedBuilds(slug, productName, dir = BUILDS_DIR) {
+  const candidates = existsSync(dir) ? readdirSync(dir).filter((name) => name.startsWith(`${productName}-`)) : []
+  if (!candidates.length) return
+  let uploaded
+  try {
+    uploaded = new Set(
+      gh(['api', '--paginate', `repos/${slug}/releases`, '--jq', '.[].assets[] | select(.state == "uploaded" and .digest != null) | "\\(.size) \\(.digest)"'])
+        .split('\n')
+        .filter(Boolean)
+    )
+  } catch (e) {
+    log.warn(`Couldn't read ${slug}'s files, so ${shown(dir)} is left as it is: ${ghError(e)}`)
+    return
+  }
+  const sizes = new Set([...uploaded].map((entry) => Number(entry.split(' ')[0])))
+  for (const name of candidates) {
+    const path = join(dir, name)
+    const stat = statSync(path)
+    if (!stat.isFile() || !sizes.has(stat.size)) continue
+    const { sha256 } = await describeFile(path)
+    if (!uploaded.has(`${stat.size} sha256:${sha256}`)) continue
+    rmSync(path)
+    log.info(`Deleted ${shown(path)}: ${slug} has it byte for byte`)
+  }
 }
 
 const formatSize = (bytes) => (bytes >= 1e6 ? `${(bytes / 1e6).toFixed(1)} MB` : bytes >= 1e3 ? `${(bytes / 1e3).toFixed(1)} kB` : `${bytes} B`)
